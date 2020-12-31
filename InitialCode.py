@@ -41,8 +41,8 @@ class Bullet(pygame.sprite.Sprite):
         
         # maths to make the bullet fire in the direction of the mouse
         
-        self.rect.x = self.rect.x + (10* (self.x_difference /self.diagonal))
-        self.rect.y = self.rect.y + (10* (self.y_difference /self.diagonal))
+        self.rect.x = self.rect.x + round(10* (self.x_difference /self.diagonal))
+        self.rect.y = self.rect.y + round(10* (self.y_difference /self.diagonal))
         
 
 
@@ -80,8 +80,8 @@ class Player(pygame.sprite.Sprite):
         x = pos[0]
         y = pos[1]
         # player centre finder
-        self.player_centre_x = self.rect.x + self.x_size / 2
-        self.player_centre_y = self.rect.y + self.y_size / 2
+        self.player_centre_x = round(self.rect.x + self.x_size / 2)
+        self.player_centre_y = round(self.rect.y + self.y_size / 2)
         
         # maths to find angle to rotate sprite by
         y_difference = self.player_centre_y - y
