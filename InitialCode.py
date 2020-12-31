@@ -12,7 +12,40 @@ SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 700
  
 # Classes
- 
+class Bullet(pygame.sprite.Sprite):
+    # This is the class for our bullets that the player will shoot
+    def __init__(self, x, y):
+        # constructor
+        super().__init__()
+        self.x_size = 5
+        self.y_size = 5
+        self.image = pygame.Surface([self.x_size, self.y_size])
+        self.image.fill(BLACK)
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        # mouse position when bullet is shot
+
+        pos = pygame.mouse.get_pos()
+        x = pos[0]
+        y = pos[1]
+
+        self.bullet_centre_x = self.rect.x + self.x_size / 2
+        self.bullet_centre_y = self.rect.y + self.y_size / 2
+
+        self.y_difference = y - self.bullet_centre_y
+        self.x_difference = x - self.bullet_centre_x
+        
+        self.diagonal = math.sqrt((self.y_difference ** 2) + (self.x_difference ** 2))
+    def update(self):
+        
+        # maths to make the bullet fire in the direction of the mouse
+        
+        self.rect.x = self.rect.x + (10* (self.x_difference /self.diagonal))
+        self.rect.y = self.rect.y + (10* (self.y_difference /self.diagonal))
+        
+
+
 class Player(pygame.sprite.Sprite):
     # this is the class for the player
     def __init__(self):
@@ -47,12 +80,12 @@ class Player(pygame.sprite.Sprite):
         x = pos[0]
         y = pos[1]
         # player centre finder
-        player_centre_x = self.rect.x + self.x_size / 2
-        player_centre_y = self.rect.y + self.y_size / 2
+        self.player_centre_x = self.rect.x + self.x_size / 2
+        self.player_centre_y = self.rect.y + self.y_size / 2
         
         # maths to find angle to rotate sprite by
-        y_difference = player_centre_y - y
-        x_difference = x - player_centre_x
+        y_difference = self.player_centre_y - y
+        x_difference = x - self.player_centre_x
         
         if x_difference == 0 and y_difference >= 0:
             self.angle = 90
@@ -82,6 +115,7 @@ class Game(object):
 
         # Sprite groups
         self.all_sprites_list = pygame.sprite.Group()
+        self.bullet_list = pygame.sprite.Group()
 
         # Create the player
         self.player = Player()
@@ -93,7 +127,11 @@ class Game(object):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return True
-
+            # bullet shooting
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                self.bullet = Bullet(self.player.player_centre_x, self.player.player_centre_y)
+                self.all_sprites_list.add(self.bullet)
+                self.bullet_list.add(self.bullet)
             # Player movement code
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_w:
@@ -126,6 +164,8 @@ class Game(object):
         
         self.all_sprites_list.update()
  
+
+        # TODO: remove bullet from lists when off screnn
     def display_frame(self, screen):
         # Display everything to the screen for the game. 
         screen.fill(WHITE)
