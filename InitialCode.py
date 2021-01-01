@@ -7,11 +7,22 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
+DARK_GREEN = (34,139,34)
  
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 700
  
 # Classes
+class Tree(pygame.sprite.Sprite):
+    # this is the class for our trees in the map
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.Surface([50,50])
+        self.image.fill(DARK_GREEN)
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
 class Bullet(pygame.sprite.Sprite):
     # This is the class for our bullets that the player will shoot
     def __init__(self, x, y):
@@ -66,13 +77,13 @@ class Player(pygame.sprite.Sprite):
 
     def move(self, x_speed, y_speed):
         # method to change the speed variables of the player
-
+        
         self.x_speed = self.x_speed + x_speed
         self.y_speed = self.y_speed + y_speed
     def update(self):
-        # update sprite position
-        self.rect.x = self.rect.x + self.x_speed
-        self.rect.y = self.rect.y + self.y_speed
+        
+        
+
 
         # making the sprite rotate
         # mouse/target position
@@ -116,7 +127,32 @@ class Game(object):
         # Sprite groups
         self.all_sprites_list = pygame.sprite.Group()
         self.bullet_list = pygame.sprite.Group()
+        self.tree_list = pygame.sprite.Group()
 
+
+        # Creating the map of trees
+        self.map = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,1],
+                    [1,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
+                    [1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,1,0,0,1,0,0,1,0,0,0,0,1],
+                    [1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+                    [1,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,1,0,0,1],
+                    [1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                    ]
+
+        for j in range(14):
+            for i in range(20):
+                if self.map[j][i] == 1:
+                    self.tree = Tree(i*50,j*50)
+                    self.all_sprites_list.add(self.tree)
+                    self.tree_list.add(self.tree)
         # Create the player
         self.player = Player()
         self.all_sprites_list.add(self.player)
@@ -163,12 +199,42 @@ class Game(object):
         #updates positions and checks for collisions.
         
         self.all_sprites_list.update()
- 
+        
+        # removing bullets from sprite list if they collide with
+        for self.bullet in self.bullet_list:
+            if pygame.sprite.spritecollide(self.bullet, self.tree_list, False):
+                self.bullet_list.remove(self.bullet)
+                self.all_sprites_list.remove(self.bullet)
 
-        # TODO: remove bullet from lists when off screnn
+        
+        # update sprite position
+        self.player.rect.x = self.player.rect.x + self.player.x_speed
+        
+
+        # making it so player can't pass through tree
+        tree_hit_list = pygame.sprite.spritecollide(self.player, self.tree_list, False)
+        for self.tree in tree_hit_list:
+            if self.player.x_speed > 0:
+                self.player.rect.right = self.tree.rect.left
+            else:
+                self.player.rect.left = self.tree.rect.right
+            
+        self.player.rect.y = self.player.rect.y + self.player.y_speed
+
+        tree_hit_list = pygame.sprite.spritecollide(self.player, self.tree_list, False)
+        for self.tree in tree_hit_list:
+            if self.player.y_speed > 0:
+                self.player.rect.bottom = self.tree.rect.top
+            else:
+                self.player.rect.top = self.tree.rect.bottom
+
+
+        
+
+        
     def display_frame(self, screen):
         # Display everything to the screen for the game. 
-        screen.fill(WHITE)
+        screen.fill(GREEN)
 
 
         # draw all the sprites
