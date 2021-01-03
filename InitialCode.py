@@ -22,6 +22,7 @@ class Tree(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+        self.health = 50
 
 class Bullet(pygame.sprite.Sprite):
     # This is the class for our bullets that the player will shoot
@@ -35,6 +36,7 @@ class Bullet(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+        self.damage = 10
         # mouse position when bullet is shot
 
         pos = pygame.mouse.get_pos()
@@ -74,6 +76,7 @@ class Player(pygame.sprite.Sprite):
         self.angle = 0
         self.x_speed = 0
         self.y_speed = 0
+        
 
     def move(self, x_speed, y_speed):
         # method to change the speed variables of the player
@@ -202,9 +205,23 @@ class Game(object):
         
         # removing bullets from sprite list if they collide with
         for self.bullet in self.bullet_list:
-            if pygame.sprite.spritecollide(self.bullet, self.tree_list, False):
+            trees_hit = pygame.sprite.spritecollide(self.bullet, self.tree_list, False)
+            for self.tree in trees_hit:
+                # checking if tree is a side tree
                 self.bullet_list.remove(self.bullet)
                 self.all_sprites_list.remove(self.bullet)
+                if not(self.tree.rect.x == 0 or self.tree.rect.x == 950 or self.tree.rect.y == 0 or self.tree.rect.y == 650):
+                    
+                    self.tree.health = self.tree.health - self.bullet.damage
+                    self.bullet_list.remove(self.bullet)
+                    self.all_sprites_list.remove(self.bullet)
+                    if self.tree.health < 1:
+                        # remove tree if its health goes below 0
+                        
+                        self.tree_list.remove(self.tree)
+                        self.all_sprites_list.remove(self.tree)
+                    
+                    
 
         
         # update sprite position
