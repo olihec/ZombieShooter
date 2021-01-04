@@ -13,11 +13,48 @@ SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 700
  
 # Classes
+class Zombie(pygame.sprite.Sprite):
+    # this is the basic zombie class that will follow the player
+    def __init__(self, x, y):
+        super().__init__()
+        self.x_size = 15
+        self.y_size = 15
+        self.original_image = pygame.Surface([self.x_size, self.y_size])
+        self.image = self.original_image
+        self.image.fill((70,109,67))
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        
+
+        # variables to make the zombie follow the player
+
+        self.player_centre_x = 0
+        self.player_centre_y = 0
+        
+    def update(self):
+        # making the zombie follow the player
+
+        # TODO: make pathfinding better using graph traversal
+
+        self.zombie_centre_x = self.rect.x + self.x_size / 2
+        self.zombie_centre_y = self.rect.y + self.y_size / 2
+
+        self.y_difference = self.player_centre_y - self.zombie_centre_y
+        self.x_difference = self.player_centre_x - self.zombie_centre_x
+        
+        self.diagonal = math.sqrt((self.y_difference ** 2) + (self.x_difference ** 2))
+        
+        self.rect.x = self.rect.x + round(3*(self.x_difference /self.diagonal))
+        self.rect.y = self.rect.y + round(3*(self.y_difference /self.diagonal))
+    
+        
+
 class Tree(pygame.sprite.Sprite):
     # this is the class for our trees in the map
     def __init__(self, x, y):
         super().__init__()
-        self.image = pygame.Surface([50,50])
+        self.image = pygame.Surface([20,20])
         self.image.fill(DARK_GREEN)
         self.rect = self.image.get_rect()
         self.rect.x = x
@@ -64,8 +101,8 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         # constructor for the class, defining it's attributes
         super().__init__()
-        self.x_size = 20
-        self.y_size = 20
+        self.x_size = 15
+        self.y_size = 15
         self.original_image = pygame.Surface([self.x_size, self.y_size])
         self.image = self.original_image
         self.image.fill(RED)
@@ -77,6 +114,8 @@ class Player(pygame.sprite.Sprite):
         self.x_speed = 0
         self.y_speed = 0
         
+        self.player_centre_x = self.rect.x + self.x_size / 2
+        self.player_centre_y = self.rect.y + self.y_size / 2
 
     def move(self, x_speed, y_speed):
         # method to change the speed variables of the player
@@ -131,34 +170,61 @@ class Game(object):
         self.all_sprites_list = pygame.sprite.Group()
         self.bullet_list = pygame.sprite.Group()
         self.tree_list = pygame.sprite.Group()
+        self.zombie_list = pygame.sprite.Group()
 
 
         # Creating the map of trees
-        self.map = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,0,0,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,1],
-                    [1,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
-                    [1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,0,0,0,0,0,0,0,1,0,0,1,0,0,1,0,0,0,0,1],
-                    [1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
-                    [1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
-                    [1,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,1,0,0,1],
-                    [1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
-                    [1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        self.map = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
                     ]
 
-        for j in range(14):
-            for i in range(20):
+        for j in range(35):
+            for i in range(50):
                 if self.map[j][i] == 1:
-                    self.tree = Tree(i*50,j*50)
+                    self.tree = Tree(i*20,j*20)
                     self.all_sprites_list.add(self.tree)
                     self.tree_list.add(self.tree)
         # Create the player
         self.player = Player()
         self.all_sprites_list.add(self.player)
+
+        # Create zombie 
+        self.zombie = Zombie(600,600)
+        self.all_sprites_list.add(self.zombie)
+        self.zombie_list.add(self.zombie)
     def process_events(self):
         # Process all of the events. Return a "True" if we need
         #    to close the window. 
@@ -174,24 +240,24 @@ class Game(object):
             # Player movement code
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_w:
-                    self.player.move(0,-5)
+                    self.player.move(0,-7)
                 if event.key == pygame.K_s:
-                    self.player.move(0,5)
+                    self.player.move(0,7)
                 if event.key == pygame.K_a:
-                    self.player.move(-5,0)
+                    self.player.move(-7,0)
                 if event.key == pygame.K_d:
-                    self.player.move(5,0)
+                    self.player.move(7,0)
             
             # Code to stop the player moving when key is released
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_w:
-                    self.player.move(0,5)
+                    self.player.move(0,7)
                 if event.key == pygame.K_s:
-                    self.player.move(0,-5)
+                    self.player.move(0,-7)
                 if event.key == pygame.K_a:
-                    self.player.move(5,0)
+                    self.player.move(7,0)
                 if event.key == pygame.K_d:
-                    self.player.move(-5,0)
+                    self.player.move(-7,0)
             
     
         return False
@@ -200,7 +266,11 @@ class Game(object):
         
         #This method is run each time through the frame. It
         #updates positions and checks for collisions.
-        
+
+        # give the zombie the players co ords so it can follow
+        self.zombie.player_centre_x = self.player.player_centre_x
+        self.zombie.player_centre_y = self.player.player_centre_y
+
         self.all_sprites_list.update()
         
         # removing bullets from sprite list if they collide with
@@ -210,7 +280,7 @@ class Game(object):
                 # checking if tree is a side tree
                 self.bullet_list.remove(self.bullet)
                 self.all_sprites_list.remove(self.bullet)
-                if not(self.tree.rect.x == 0 or self.tree.rect.x == 950 or self.tree.rect.y == 0 or self.tree.rect.y == 650):
+                if not(self.tree.rect.x == 0 or self.tree.rect.x == 980 or self.tree.rect.y == 0 or self.tree.rect.y == 680):
                     
                     self.tree.health = self.tree.health - self.bullet.damage
                     self.bullet_list.remove(self.bullet)
