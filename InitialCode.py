@@ -214,14 +214,15 @@ class Game(object):
                     ]
 
         # putting in the trees randomly
-        for z in range(5000):
+        count = 0
+        while count < 100:
             
             x = random.randint(1,49)
             y = random.randint(1,34)
             if self.map[y][x] == 0:
                 self.map[y][x] = 1
-            else:
-                z = z - 1
+                count = count + 1
+    
 
         for j in range(35):
             for i in range(50):
