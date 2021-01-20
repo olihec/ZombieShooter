@@ -119,6 +119,16 @@ class Player(pygame.sprite.Sprite):
         self.player_centre_x = self.rect.x + self.x_size / 2
         self.player_centre_y = self.rect.y + self.y_size / 2
 
+        self.lives = 3
+        self.score = 0
+
+        self.heart_image = pygame.image.load("heart.png").convert()
+        self.heart_image.set_colorkey(BLACK)
+
+        font = pygame.font.SysFont('Calibri', 25, True, False)
+ 
+        self.text = font.render("Score: " + str(self.score),True,WHITE)
+
     def move(self, x_speed, y_speed):
         # method to change the speed variables of the player
         
@@ -174,6 +184,7 @@ class Game(object):
         self.tree_list = pygame.sprite.Group()
         self.zombie_list = pygame.sprite.Group()
 
+        self.timer = 0
 
         # Creating the map of trees
         self.map = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -280,6 +291,9 @@ class Game(object):
         #This method is run each time through the frame. It
         #updates positions and checks for collisions.
 
+        # make the timer increase every second
+        self.timer = self.timer + 1
+
         # give the zombie the players co ords so it can follow
         self.zombie.player_centre_x = self.player.player_centre_x
         self.zombie.player_centre_y = self.player.player_centre_y
@@ -304,7 +318,13 @@ class Game(object):
                         self.tree_list.remove(self.tree)
                         self.all_sprites_list.remove(self.tree)
                     
-                    
+        
+        zombie_hit = pygame.sprite.spritecollide(self.player, self.zombie_list, True) 
+        for self.zombie in zombie_hit:
+            self.player.lives = self.player.lives - 1
+            self.zombie_list.remove(self.zombie)
+            self.all_sprites_list.remove(self.zombie)
+
 
         
         # update sprite position
@@ -356,6 +376,11 @@ class Game(object):
 
         # draw all the sprites
         self.all_sprites_list.draw(screen)
+
+        # drawing the hearts and score of the player
+        for i in range(self.player.lives):
+            screen.blit(self.player.heart_image, [i * 20 + 900, 2])
+        screen.blit(self.player.text, [800, 2])
  
         pygame.display.flip()
  
