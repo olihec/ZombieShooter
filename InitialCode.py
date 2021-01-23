@@ -65,7 +65,7 @@ class Tree(pygame.sprite.Sprite):
 
 class Bullet(pygame.sprite.Sprite):
     # This is the class for our bullets that the player will shoot
-    def __init__(self, x, y):
+    def __init__(self, x, y, gun):
         # constructor
         super().__init__()
         self.x_size = 5
@@ -76,11 +76,16 @@ class Bullet(pygame.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y
         self.damage = 10
+
+        
         # mouse position when bullet is shot
 
         pos = pygame.mouse.get_pos()
+
+        
         x = pos[0]
         y = pos[1]
+        
 
         self.bullet_centre_x = self.rect.x + self.x_size / 2
         self.bullet_centre_y = self.rect.y + self.y_size / 2
@@ -89,6 +94,16 @@ class Bullet(pygame.sprite.Sprite):
         self.x_difference = x - self.bullet_centre_x
         
         self.diagonal = math.sqrt((self.y_difference ** 2) + (self.x_difference ** 2))
+
+        if gun == "Shotgun":
+            x = random.randint(pos[0] - round(self.diagonal / 5) , round(pos[0] + self.diagonal / 5))
+            y = random.randint(pos[1] - round(self.diagonal / 5), round(pos[1] + self.diagonal / 5))
+
+            self.y_difference = y - self.bullet_centre_y
+            self.x_difference = x - self.bullet_centre_x
+        
+            self.diagonal = math.sqrt((self.y_difference ** 2) + (self.x_difference ** 2))
+
     def update(self):
         
         # maths to make the bullet fire in the direction of the mouse
@@ -122,6 +137,10 @@ class Player(pygame.sprite.Sprite):
         self.lives = 3
         self.score = 0
 
+        # variable to track which gun player has
+        self.gun = "Shotgun"
+
+        # image for the hearts
         self.heart_image = pygame.image.load("heart.png").convert()
         self.heart_image.set_colorkey(BLACK)
 
@@ -165,6 +184,7 @@ class Player(pygame.sprite.Sprite):
         else:
             self.angle = math.degrees(math.atan( y_difference / x_difference ))
         
+        # rotation for player
         self.image = pygame.transform.rotate(self.original_image, self.angle)
         
  
@@ -184,6 +204,7 @@ class Game(object):
         self.tree_list = pygame.sprite.Group()
         self.zombie_list = pygame.sprite.Group()
 
+        # timer in game used for bullets and zombies
         self.timer = 0
 
         # Creating the map of trees
@@ -258,9 +279,16 @@ class Game(object):
                 return True
             # bullet shooting
             if event.type == pygame.MOUSEBUTTONDOWN:
-                self.bullet = Bullet(self.player.player_centre_x, self.player.player_centre_y)
-                self.all_sprites_list.add(self.bullet)
-                self.bullet_list.add(self.bullet)
+
+                if self.player.gun == "Pistol":
+                    self.bullet = Bullet(self.player.player_centre_x, self.player.player_centre_y, self.player.gun)
+                    self.all_sprites_list.add(self.bullet)
+                    self.bullet_list.add(self.bullet)
+                elif self.player.gun == "Shotgun":
+                    for i in range(5):
+                        self.bullet = Bullet(self.player.player_centre_x, self.player.player_centre_y, self.player.gun)
+                        self.all_sprites_list.add(self.bullet)
+                        self.bullet_list.add(self.bullet)
             # Player movement code
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_w:
