@@ -96,8 +96,8 @@ class Bullet(pygame.sprite.Sprite):
         self.diagonal = math.sqrt((self.y_difference ** 2) + (self.x_difference ** 2))
 
         if gun == "Shotgun":
-            x = random.randint(pos[0] - round(self.diagonal / 5) , round(pos[0] + self.diagonal / 5))
-            y = random.randint(pos[1] - round(self.diagonal / 5), round(pos[1] + self.diagonal / 5))
+            x = random.randint(pos[0] - round(self.diagonal / 2) , round(pos[0] + self.diagonal / 2))
+            y = random.randint(pos[1] - round(self.diagonal / 2), round(pos[1] + self.diagonal / 2))
 
             self.y_difference = y - self.bullet_centre_y
             self.x_difference = x - self.bullet_centre_x
