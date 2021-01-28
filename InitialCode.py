@@ -64,7 +64,7 @@ class Powerup(pygame.sprite.Sprite):
         self.rect.y = y
 
         # assigning random powerup to the sprite
-        powerup_list = ["Shotgun"]
+        powerup_list = ["Shotgun", "Speed"]
         x = random.randint(0, len(powerup_list) - 1)
         self.type = powerup_list[x]
      
@@ -161,6 +161,7 @@ class Player(pygame.sprite.Sprite):
 
         self.lives = 3
         self.score = 0
+        self.speed = 5
 
         # variable to track which gun player has
         self.gun = "Pistol"
@@ -168,6 +169,10 @@ class Player(pygame.sprite.Sprite):
         self.reload_time = 20
         self.shot_timer = 0
         self.gun_reloaded = True
+
+        # variables to help player with powerups
+        self.powerup_timer = 0
+        self.powerup_type = ""
 
         # image for the hearts
         self.heart_image = pygame.image.load("heart.png").convert()
@@ -181,6 +186,8 @@ class Player(pygame.sprite.Sprite):
         
         self.x_speed = self.x_speed + x_speed
         self.y_speed = self.y_speed + y_speed
+        
+
     def update(self):
         
         self.text = self.font.render("Score: " + str(self.score),True,WHITE)
@@ -336,24 +343,24 @@ class Game(object):
             # Player movement code
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_w:
-                    self.player.move(0,-5)
+                    self.player.move(0,-self.player.speed)
                 if event.key == pygame.K_s:
-                    self.player.move(0,5)
+                    self.player.move(0,self.player.speed)
                 if event.key == pygame.K_a:
-                    self.player.move(-5,0)
+                    self.player.move(-self.player.speed,0)
                 if event.key == pygame.K_d:
-                    self.player.move(5,0)
+                    self.player.move(self.player.speed,0)
             
             # Code to stop the player moving when key is released
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_w:
-                    self.player.move(0,5)
+                    self.player.move(0,self.player.speed)
                 if event.key == pygame.K_s:
-                    self.player.move(0,-5)
+                    self.player.move(0,-self.player.speed)
                 if event.key == pygame.K_a:
-                    self.player.move(5,0)
+                    self.player.move(self.player.speed,0)
                 if event.key == pygame.K_d:
-                    self.player.move(-5,0)
+                    self.player.move(-self.player.speed,0)
             
     
         return False
@@ -419,15 +426,45 @@ class Game(object):
             self.zombie_list.remove(self.zombie)
             self.all_sprites_list.remove(self.zombie)
 
-        # check for collision with powerup
+        # check for collision with powerup 
         powerup_hit = pygame.sprite.spritecollide(self.player, self.powerup_list, True) 
         for self.powerup in powerup_hit:
+            # defining what each powerup does by its name
             if self.powerup.type == "Shotgun":
                 self.player.gun = self.powerup.type
                 self.player.reload_time = 40
+
+            elif self.powerup.type == "Speed":
+                if self.player.x_speed > 0:
+                    self.player.x_speed = self.player.x_speed + 5
+                if self.player.x_speed < 0:
+                    self.player.x_speed = self.player.x_speed - 5
+                if self.player.y_speed > 0:
+                    self.player.y_speed = self.player.y_speed + 5
+                if self.player.y_speed < 0:
+                    self.player.y_speed = self.player.y_speed - 5
+                self.player.speed = 10
+                self.player.powerup_timer = self.timer
+                self.player.powerup_type = "Speed"
+
+
             self.powerup_list.remove(self.powerup)
             self.all_sprites_list.remove(self.powerup)
         
+        # turning off timed powerups
+        if self.player.powerup_type == "Speed":
+            if self.timer - self.player.powerup_timer == self.player.powerup_timer + 100:
+                if self.player.x_speed > 0:
+                    self.player.x_speed = self.player.x_speed - 5
+                if self.player.x_speed < 0:
+                    self.player.x_speed = self.player.x_speed + 5
+                if self.player.y_speed > 0:
+                    self.player.y_speed = self.player.y_speed - 5
+                if self.player.y_speed < 0:
+                    self.player.y_speed = self.player.y_speed + 5
+                self.player.speed = 5
+
+
         # update sprite position
         self.player.rect.x = self.player.rect.x + self.player.x_speed
         
