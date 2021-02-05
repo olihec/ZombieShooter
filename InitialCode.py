@@ -30,28 +30,43 @@ class Zombie(pygame.sprite.Sprite):
         self.x_speed = 0
         self.y_speed = 0
 
-        self.health = 100
+        self.health = 50
 
+        self.entered_map = False
         # variables to make the zombie follow the player
 
         self.player_centre_x = 0
         self.player_centre_y = 0
         
     def update(self):
-        # making the zombie follow the player
-
-
-
-        self.zombie_centre_x = self.rect.x + self.x_size / 2
-        self.zombie_centre_y = self.rect.y + self.y_size / 2
-
-        self.y_difference = self.player_centre_y - self.zombie_centre_y
-        self.x_difference = self.player_centre_x - self.zombie_centre_x
         
-        self.diagonal = math.sqrt((self.y_difference ** 2) + (self.x_difference ** 2))
+        # making zombies enter the map slowly
+        if self.entered_map == False:
+            if self.rect.y < 20:
+                self.y_speed = 1
+            if self.rect.y > 665:
+                self.y_speed = -1
+            if self.rect.x < 20:
+                self.x_speed = 1
+            if self.rect.x > 965:
+                self.x_speed = -1
+        else:
+            # making the zombie follow the player
+            self.zombie_centre_x = self.rect.x + self.x_size / 2
+            self.zombie_centre_y = self.rect.y + self.y_size / 2
+
+            self.y_difference = self.player_centre_y - self.zombie_centre_y
+            self.x_difference = self.player_centre_x - self.zombie_centre_x
+            
+            self.diagonal = math.sqrt((self.y_difference ** 2) + (self.x_difference ** 2))
+            
+            self.x_speed = round(2*(self.x_difference /self.diagonal))
+            self.y_speed = round(2*(self.y_difference /self.diagonal))
+    
         
-        self.x_speed = round(2*(self.x_difference /self.diagonal))
-        self.y_speed = round(2*(self.y_difference /self.diagonal))
+        if self.rect.x == 20 or self.rect.x == 965 or self.rect.y == 20 or self.rect.y == 665:
+            self.entered_map = True
+
     
 class Powerup(pygame.sprite.Sprite):
     # this is the class to give the player powerups
@@ -310,10 +325,7 @@ class Game(object):
         self.player = Player()
         self.all_sprites_list.add(self.player)
 
-        # Create zombie 
-        self.zombie = Zombie(600,600)
-        self.all_sprites_list.add(self.zombie)
-        self.zombie_list.add(self.zombie)
+        
 
         # Create powerup
         self.powerup = Powerup(600,600)
@@ -370,12 +382,28 @@ class Game(object):
         #This method is run each time through the frame. It
         #updates positions and checks for collisions.
 
+        
+
+        # Create zombie 
+        if self.timer % 120 == 0:
+            zombie_created = False
+            while zombie_created == False:
+                x = random.randint(-15, 1000)
+                y = random.randint(-15, 700)
+                # check is zombie is out of screen
+                if x == -15 or x == 1000 or y == -15 or y == 700:
+                    zombie_created = True
+                    self.zombie = Zombie(x,y)
+                    self.all_sprites_list.add(self.zombie)
+                    self.zombie_list.add(self.zombie)
+
         # make the timer increase every second
         self.timer = self.timer + 1
 
         # give the zombie the players co ords so it can follow
-        self.zombie.player_centre_x = self.player.player_centre_x
-        self.zombie.player_centre_y = self.player.player_centre_y
+        for self.zombie in self.zombie_list:
+            self.zombie.player_centre_x = self.player.player_centre_x
+            self.zombie.player_centre_y = self.player.player_centre_y
 
         self.all_sprites_list.update()
         
@@ -397,7 +425,7 @@ class Game(object):
                     self.zombie.health = self.zombie.health - self.bullet.damage
                     self.bullet_list.remove(self.bullet)
                     self.all_sprites_list.remove(self.bullet)
-                    if self.tree.health < 1:
+                    if self.zombie.health < 1:
                             # remove zombie if its health goes below 0
                             self.player.score = self.player.score + 10
                             self.zombie_list.remove(self.zombie)
@@ -486,25 +514,29 @@ class Game(object):
             else:
                 self.player.rect.top = self.tree.rect.bottom
 
-        # make the zombies unable to pass through trees
-        self.zombie.rect.x = self.zombie.rect.x + self.zombie.x_speed
-        
-        tree_hit_list = pygame.sprite.spritecollide(self.zombie, self.tree_list, False)
-        for self.tree in tree_hit_list:
-            if self.zombie.x_speed > 0:
-                self.zombie.rect.right = self.tree.rect.left
-            else:
-                self.zombie.rect.left = self.tree.rect.right
+        for self.zombie in self.zombie_list:
+            # make the zombies unable to pass through trees when in map
             
-        self.zombie.rect.y = self.zombie.rect.y + self.zombie.y_speed
+            self.zombie.rect.x = self.zombie.rect.x + self.zombie.x_speed
+            
+            if self.zombie.entered_map == True:    
+                tree_hit_list = pygame.sprite.spritecollide(self.zombie, self.tree_list, False)
+                for self.tree in tree_hit_list:
+                    if self.zombie.x_speed > 0:
+                        self.zombie.rect.right = self.tree.rect.left
+                    else:
+                        self.zombie.rect.left = self.tree.rect.right
+                    
+            self.zombie.rect.y = self.zombie.rect.y + self.zombie.y_speed
 
-        tree_hit_list = pygame.sprite.spritecollide(self.zombie, self.tree_list, False)
-        for self.tree in tree_hit_list:
-            if self.zombie.y_speed > 0:
-                self.zombie.rect.bottom = self.tree.rect.top
-            else:
-                self.zombie.rect.top = self.tree.rect.bottom
-        
+            if self.zombie.entered_map == True:
+                tree_hit_list = pygame.sprite.spritecollide(self.zombie, self.tree_list, False)
+                for self.tree in tree_hit_list:
+                    if self.zombie.y_speed > 0:
+                        self.zombie.rect.bottom = self.tree.rect.top
+                    else:
+                        self.zombie.rect.top = self.tree.rect.bottom
+            
 
         
     def display_frame(self, screen):
