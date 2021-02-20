@@ -1,6 +1,7 @@
 import pygame
 import random
 import math
+from os import path
  
 # Constants
 BLACK = (0, 0, 0)
@@ -12,6 +13,9 @@ YELLOW = (255,255,0)
  
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 700
+
+# highscore file
+HIGHSCORE_FILE = "highscore.txt"
  
 # Classes
 class Zombie(pygame.sprite.Sprite):
@@ -30,7 +34,7 @@ class Zombie(pygame.sprite.Sprite):
         self.x_speed = 0
         self.y_speed = 0
 
-        self.health = 50
+        self.health = 30
 
         self.entered_map = False
         # variables to make the zombie follow the player
@@ -251,6 +255,18 @@ class Game(object):
         # Constructor. Create all our attributes and initialize
         #    the game.
         
+        # loading highscores
+
+        self.dir = path.dirname(__file__)
+        with open(path.join(self.dir, HIGHSCORE_FILE), 'r') as f:
+            try:
+                self.highscore = int(f.read())
+            except:
+                self.highscore = 0
+
+
+        # variable to determine when the game is on start screen of not 
+        self.game_start = False
 
         # Sprite groups
         self.all_sprites_list = pygame.sprite.Group()
@@ -339,19 +355,24 @@ class Game(object):
             if event.type == pygame.QUIT:
                 return True
             # bullet shooting
+            
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if self.player.gun_reloaded == True:
-                    self.player.gun_reloaded = False
-                    self.player.shot_timer = 0
-                    if self.player.gun == "Pistol":
-                        self.bullet = Bullet(self.player.player_centre_x, self.player.player_centre_y, self.player.gun)
-                        self.all_sprites_list.add(self.bullet)
-                        self.bullet_list.add(self.bullet)
-                    elif self.player.gun == "Shotgun":
-                        for i in range(5):
+                if self.game_start:
+                    if self.player.gun_reloaded == True:
+                        self.player.gun_reloaded = False
+                        self.player.shot_timer = 0
+                        if self.player.gun == "Pistol":
                             self.bullet = Bullet(self.player.player_centre_x, self.player.player_centre_y, self.player.gun)
                             self.all_sprites_list.add(self.bullet)
                             self.bullet_list.add(self.bullet)
+                        elif self.player.gun == "Shotgun":
+                            for i in range(5):
+                                self.bullet = Bullet(self.player.player_centre_x, self.player.player_centre_y, self.player.gun)
+                                self.all_sprites_list.add(self.bullet)
+                                self.bullet_list.add(self.bullet)
+                else:
+                    self.game_start = True
+            
             # Player movement code
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_w:
@@ -374,7 +395,7 @@ class Game(object):
                 if event.key == pygame.K_d:
                     self.player.move(-self.player.speed,0)
             
-    
+
         return False
  
     def run_logic(self):
@@ -383,178 +404,289 @@ class Game(object):
         #updates positions and checks for collisions.
 
         
+        if self.game_start:
+            # Create zombie 
+            if self.timer % 120 == 0:
+                zombie_created = False
+                while zombie_created == False:
+                    x = random.randint(-15, 1000)
+                    y = random.randint(-15, 700)
+                    # check is zombie is out of screen
+                    if x == -15 or x == 1000 or y == -15 or y == 700:
+                        zombie_created = True
+                        self.zombie = Zombie(x,y)
+                        self.all_sprites_list.add(self.zombie)
+                        self.zombie_list.add(self.zombie)
 
-        # Create zombie 
-        if self.timer % 120 == 0:
-            zombie_created = False
-            while zombie_created == False:
-                x = random.randint(-15, 1000)
-                y = random.randint(-15, 700)
-                # check is zombie is out of screen
-                if x == -15 or x == 1000 or y == -15 or y == 700:
-                    zombie_created = True
-                    self.zombie = Zombie(x,y)
-                    self.all_sprites_list.add(self.zombie)
-                    self.zombie_list.add(self.zombie)
+            # make the timer increase every second
+            self.timer = self.timer + 1
 
-        # make the timer increase every second
-        self.timer = self.timer + 1
+            # give the zombie the players co ords so it can follow
+            for self.zombie in self.zombie_list:
+                self.zombie.player_centre_x = self.player.player_centre_x
+                self.zombie.player_centre_y = self.player.player_centre_y
 
-        # give the zombie the players co ords so it can follow
-        for self.zombie in self.zombie_list:
-            self.zombie.player_centre_x = self.player.player_centre_x
-            self.zombie.player_centre_y = self.player.player_centre_y
 
-        self.all_sprites_list.update()
-        
-        # check is reload time is finished
-        if self.player.reload_time == self.player.shot_timer:
-            self.player.gun_reloaded = True
+            # update the position of all sprites
+            self.all_sprites_list.update()
+            
+            # check is reload time is finished
+            if self.player.reload_time == self.player.shot_timer:
+                self.player.gun_reloaded = True
 
-        # removing bullets from sprite list if they collide or reach range limit
-        for self.bullet in self.bullet_list:
-            # remove bullets if their range is reached
-            if self.bullet.timer == self.bullet.range:
-                self.bullet_list.remove(self.bullet)
-                self.all_sprites_list.remove(self.bullet)
-        
-            else:
-                # collide with zombie
-                zombie_hit = pygame.sprite.spritecollide(self.bullet, self.zombie_list, False) 
-                for self.zombie in zombie_hit:
-                    self.zombie.health = self.zombie.health - self.bullet.damage
+            # removing bullets from sprite list if they collide or reach range limit
+            for self.bullet in self.bullet_list:
+                # remove bullets if their range is reached
+                if self.bullet.timer == self.bullet.range:
                     self.bullet_list.remove(self.bullet)
                     self.all_sprites_list.remove(self.bullet)
-                    if self.zombie.health < 1:
-                            # remove zombie if its health goes below 0
-                            self.player.score = self.player.score + 10
-                            self.zombie_list.remove(self.zombie)
-                            self.all_sprites_list.remove(self.zombie)
-                # collide with tree
-                trees_hit = pygame.sprite.spritecollide(self.bullet, self.tree_list, False)
-                for self.tree in trees_hit:
-                    # checking if tree is a side tree
-                    self.bullet_list.remove(self.bullet)
-                    self.all_sprites_list.remove(self.bullet)
-                    if not(self.tree.rect.x == 0 or self.tree.rect.x == 980 or self.tree.rect.y == 0 or self.tree.rect.y == 680):
-                        
-                        self.tree.health = self.tree.health - self.bullet.damage
+            
+                else:
+                    # collide with zombie
+                    zombie_hit = pygame.sprite.spritecollide(self.bullet, self.zombie_list, False) 
+                    for self.zombie in zombie_hit:
+                        self.zombie.health = self.zombie.health - self.bullet.damage
                         self.bullet_list.remove(self.bullet)
                         self.all_sprites_list.remove(self.bullet)
-                        if self.tree.health < 1:
-                            # remove tree if its health goes below 0
-                            self.player.score = self.player.score + 5
-                            self.tree_list.remove(self.tree)
-                            self.all_sprites_list.remove(self.tree)
+                        if self.zombie.health < 1:
+                                # remove zombie if its health goes below 0
+                                self.player.score = self.player.score + 10
+                                self.zombie_list.remove(self.zombie)
+                                self.all_sprites_list.remove(self.zombie)
+                    # collide with tree
+                    trees_hit = pygame.sprite.spritecollide(self.bullet, self.tree_list, False)
+                    for self.tree in trees_hit:
+                        # checking if tree is a side tree
+                        self.bullet_list.remove(self.bullet)
+                        self.all_sprites_list.remove(self.bullet)
+                        if not(self.tree.rect.x == 0 or self.tree.rect.x == 980 or self.tree.rect.y == 0 or self.tree.rect.y == 680):
+                            
+                            self.tree.health = self.tree.health - self.bullet.damage
+                            self.bullet_list.remove(self.bullet)
+                            self.all_sprites_list.remove(self.bullet)
+                            if self.tree.health < 1:
+                                # remove tree if its health goes below 0
+                                self.player.score = self.player.score + 5
+                                self.tree_list.remove(self.tree)
+                                self.all_sprites_list.remove(self.tree)
+                        
+            
+            zombie_hit = pygame.sprite.spritecollide(self.player, self.zombie_list, True) 
+            for self.zombie in zombie_hit:
+                self.player.lives = self.player.lives - 1
+                self.zombie_list.remove(self.zombie)
+                self.all_sprites_list.remove(self.zombie)
+                # when player dies
+                if self.player.lives < 0:
+                    if self.player.score > self.highscore:
+                        self.highscore = self.player.score
+                        with open(path.join(self.dir, HIGHSCORE_FILE), 'w') as f:
+                            f.write(str(self.player.score))
                     
-        
-        zombie_hit = pygame.sprite.spritecollide(self.player, self.zombie_list, True) 
-        for self.zombie in zombie_hit:
-            self.player.lives = self.player.lives - 1
-            self.zombie_list.remove(self.zombie)
-            self.all_sprites_list.remove(self.zombie)
+                    temp_x_speed = self.player.x_speed
+                    temp_y_speed = self.player.y_speed
+                    # restarting game
+                    # variable to determine when the game is on start screen of not 
+                    self.game_start = False
 
-        # check for collision with powerup 
-        powerup_hit = pygame.sprite.spritecollide(self.player, self.powerup_list, True) 
-        for self.powerup in powerup_hit:
-            # defining what each powerup does by its name
-            if self.powerup.type == "Shotgun":
-                self.player.gun = self.powerup.type
-                self.player.reload_time = 40
+                    # Sprite groups
+                    self.all_sprites_list = pygame.sprite.Group()
+                    self.bullet_list = pygame.sprite.Group()
+                    self.tree_list = pygame.sprite.Group()
+                    self.zombie_list = pygame.sprite.Group()
+                    self.powerup_list = pygame.sprite.Group()
 
-            elif self.powerup.type == "Speed":
-                if self.player.x_speed > 0:
-                    self.player.x_speed = self.player.x_speed + 5
-                if self.player.x_speed < 0:
-                    self.player.x_speed = self.player.x_speed - 5
-                if self.player.y_speed > 0:
-                    self.player.y_speed = self.player.y_speed + 5
-                if self.player.y_speed < 0:
-                    self.player.y_speed = self.player.y_speed - 5
-                self.player.speed = 10
-                self.player.powerup_timer = self.timer
-                self.player.powerup_type = "Speed"
+                    # timer in game used for bullets and zombies
+                    self.timer = 0
 
+                    # Creating the map of trees
+                    self.map = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                                ]
 
-            self.powerup_list.remove(self.powerup)
-            self.all_sprites_list.remove(self.powerup)
-        
-        # turning off timed powerups
-        if self.player.powerup_type == "Speed":
-            if self.timer - self.player.powerup_timer == self.player.powerup_timer + 100:
-                if self.player.x_speed > 0:
-                    self.player.x_speed = self.player.x_speed - 5
-                if self.player.x_speed < 0:
-                    self.player.x_speed = self.player.x_speed + 5
-                if self.player.y_speed > 0:
-                    self.player.y_speed = self.player.y_speed - 5
-                if self.player.y_speed < 0:
-                    self.player.y_speed = self.player.y_speed + 5
-                self.player.speed = 5
+                    # putting in the trees randomly
+                    count = 0
+                    while count < 100:
+                        
+                        x = random.randint(1,49)
+                        y = random.randint(1,34)
+                        if self.map[y][x] == 0:
+                            self.map[y][x] = 1
+                            count = count + 1
+                
+                    # variable to keep track of where there arn't trees
+                    self.empty_spaces = []
+                    for j in range(35):
+                        for i in range(50):
+                            if self.map[j][i] == 1:
+                                self.tree = Tree(i*20,j*20)
+                                self.all_sprites_list.add(self.tree)
+                                self.tree_list.add(self.tree)
+                            else:
+                                self.empty_spaces.append((j,i))
+                    # Create the player
 
+                    self.player = Player()
+                    self.player.x_speed = temp_x_speed
+                    self.player.y_speed = temp_y_speed
+                    self.all_sprites_list.add(self.player)
 
-        # update sprite position
-        self.player.rect.x = self.player.rect.x + self.player.x_speed
-        
-    
-        # making it so player can't pass through tree
-        tree_hit_list = pygame.sprite.spritecollide(self.player, self.tree_list, False)
-        for self.tree in tree_hit_list:
-            if self.player.x_speed > 0:
-                self.player.rect.right = self.tree.rect.left
-            else:
-                self.player.rect.left = self.tree.rect.right
-            
-        self.player.rect.y = self.player.rect.y + self.player.y_speed
-
-        tree_hit_list = pygame.sprite.spritecollide(self.player, self.tree_list, False)
-        for self.tree in tree_hit_list:
-            if self.player.y_speed > 0:
-                self.player.rect.bottom = self.tree.rect.top
-            else:
-                self.player.rect.top = self.tree.rect.bottom
-
-        for self.zombie in self.zombie_list:
-            # make the zombies unable to pass through trees when in map
-            
-            self.zombie.rect.x = self.zombie.rect.x + self.zombie.x_speed
-            
-            if self.zombie.entered_map == True:    
-                tree_hit_list = pygame.sprite.spritecollide(self.zombie, self.tree_list, False)
-                for self.tree in tree_hit_list:
-                    if self.zombie.x_speed > 0:
-                        self.zombie.rect.right = self.tree.rect.left
-                    else:
-                        self.zombie.rect.left = self.tree.rect.right
                     
-            self.zombie.rect.y = self.zombie.rect.y + self.zombie.y_speed
 
-            if self.zombie.entered_map == True:
-                tree_hit_list = pygame.sprite.spritecollide(self.zombie, self.tree_list, False)
-                for self.tree in tree_hit_list:
-                    if self.zombie.y_speed > 0:
-                        self.zombie.rect.bottom = self.tree.rect.top
-                    else:
-                        self.zombie.rect.top = self.tree.rect.bottom
+                    # Create powerup
+                    self.powerup = Powerup(600,600)
+                    self.all_sprites_list.add(self.powerup)
+                    self.powerup_list.add(self.powerup)
+
+            # check for collision with powerup 
+            powerup_hit = pygame.sprite.spritecollide(self.player, self.powerup_list, True) 
+            for self.powerup in powerup_hit:
+                # defining what each powerup does by its name
+                if self.powerup.type == "Shotgun":
+                    self.player.gun = self.powerup.type
+                    self.player.reload_time = 40
+
+                elif self.powerup.type == "Speed":
+                    if self.player.x_speed > 0:
+                        self.player.x_speed = self.player.x_speed + 5
+                    if self.player.x_speed < 0:
+                        self.player.x_speed = self.player.x_speed - 5
+                    if self.player.y_speed > 0:
+                        self.player.y_speed = self.player.y_speed + 5
+                    if self.player.y_speed < 0:
+                        self.player.y_speed = self.player.y_speed - 5
+                    self.player.speed = 10
+                    self.player.powerup_timer = self.timer
+                    self.player.powerup_type = "Speed"
+
+
+                self.powerup_list.remove(self.powerup)
+                self.all_sprites_list.remove(self.powerup)
             
+            # turning off timed powerups
+            if self.player.powerup_type == "Speed":
+                if self.timer - self.player.powerup_timer == self.player.powerup_timer + 100:
+                    if self.player.x_speed > 0:
+                        self.player.x_speed = self.player.x_speed - 5
+                    if self.player.x_speed < 0:
+                        self.player.x_speed = self.player.x_speed + 5
+                    if self.player.y_speed > 0:
+                        self.player.y_speed = self.player.y_speed - 5
+                    if self.player.y_speed < 0:
+                        self.player.y_speed = self.player.y_speed + 5
+                    self.player.speed = 5
+
+
+            # update sprite position
+            self.player.rect.x = self.player.rect.x + self.player.x_speed
+            
+        
+            # making it so player can't pass through tree
+            tree_hit_list = pygame.sprite.spritecollide(self.player, self.tree_list, False)
+            for self.tree in tree_hit_list:
+                if self.player.x_speed > 0:
+                    self.player.rect.right = self.tree.rect.left
+                else:
+                    self.player.rect.left = self.tree.rect.right
+                
+            self.player.rect.y = self.player.rect.y + self.player.y_speed
+
+            tree_hit_list = pygame.sprite.spritecollide(self.player, self.tree_list, False)
+            for self.tree in tree_hit_list:
+                if self.player.y_speed > 0:
+                    self.player.rect.bottom = self.tree.rect.top
+                else:
+                    self.player.rect.top = self.tree.rect.bottom
+
+            for self.zombie in self.zombie_list:
+                # make the zombies unable to pass through trees when in map
+                
+                self.zombie.rect.x = self.zombie.rect.x + self.zombie.x_speed
+                
+                if self.zombie.entered_map == True:    
+                    tree_hit_list = pygame.sprite.spritecollide(self.zombie, self.tree_list, False)
+                    for self.tree in tree_hit_list:
+                        if self.zombie.x_speed > 0:
+                            self.zombie.rect.right = self.tree.rect.left
+                        else:
+                            self.zombie.rect.left = self.tree.rect.right
+                        
+                self.zombie.rect.y = self.zombie.rect.y + self.zombie.y_speed
+
+                if self.zombie.entered_map == True:
+                    tree_hit_list = pygame.sprite.spritecollide(self.zombie, self.tree_list, False)
+                    for self.tree in tree_hit_list:
+                        if self.zombie.y_speed > 0:
+                            self.zombie.rect.bottom = self.tree.rect.top
+                        else:
+                            self.zombie.rect.top = self.tree.rect.bottom
+                
 
         
     def display_frame(self, screen):
-        # Display everything to the screen for the game. 
-        screen.fill(GREEN)
+
+        if self.game_start:
+            # Display everything to the screen for the game. 
+            screen.fill(GREEN)
 
 
-        # draw all the sprites
-        self.all_sprites_list.draw(screen)
+            # draw all the sprites
+            self.all_sprites_list.draw(screen)
 
-        # drawing the hearts and score of the player
-        for i in range(self.player.lives):
-            screen.blit(self.player.heart_image, [i * 20 + 900, 2])
-        screen.blit(self.player.text, [780, 2])
- 
+            # drawing the hearts and score of the player
+            for i in range(self.player.lives):
+                screen.blit(self.player.heart_image, [i * 20 + 900, 2])
+            screen.blit(self.player.text, [780, 2])
+    
+            
+        else:
+            screen.fill(WHITE)
+
+            font = pygame.font.SysFont("serif", 25)
+            text = font.render("ZOMBIE SHOOTER, click to start", True, BLACK)
+            center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
+            center_y = (SCREEN_HEIGHT // 2) - (text.get_height() // 2)
+            screen.blit(text, [center_x, center_y])
+
+            text = font.render("High score: " + str(self.highscore), True, BLACK)
+            center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
+            center_y = (SCREEN_HEIGHT // 2) - (text.get_height() // 2) + 30
+            screen.blit(text, [center_x, center_y])
+
         pygame.display.flip()
- 
- 
 def main():
     # Main program function.
     # Initialize Pygame and set up the window
