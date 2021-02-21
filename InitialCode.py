@@ -260,9 +260,9 @@ class Game(object):
         self.dir = path.dirname(__file__)
         with open(path.join(self.dir, HIGHSCORE_FILE), 'r') as f:
             try:
-                self.highscore = int(f.read())
+                self.highscore = [[f.readline()[:-1] , int(f.readline())], [f.readline()[:-1] , int(f.readline())], [f.readline()[:-1] , int(f.readline())]]   
             except:
-                self.highscore = 0
+                self.highscore = [["xxx", 0], ["xxx", 0], ["xxx", 0]]
 
 
         # variable to determine when the game is on start screen of not 
@@ -429,7 +429,6 @@ class Game(object):
 
             # update the position of all sprites
             self.all_sprites_list.update()
-            
             # check is reload time is finished
             if self.player.reload_time == self.player.shot_timer:
                 self.player.gun_reloaded = True
@@ -478,11 +477,41 @@ class Game(object):
                 self.all_sprites_list.remove(self.zombie)
                 # when player dies
                 if self.player.lives < 0:
-                    if self.player.score > self.highscore:
-                        self.highscore = self.player.score
+                    pointer = 999
+                    count = 0
+                    found = False
+                    while count < 3 and not(found):
+                        if self.highscore[count][1] < self.player.score:
+                            pointer = count
+                            found = True
+                        count = count + 1
+                    count = count - 1
+                    if pointer != 999:
+                        count = 2
+                        while count != pointer:
+                            count = count - 1
+                            self.highscore[count + 1] = self.highscore[count]
+                        
+                        inp = input("Enter name")
+                        self.highscore[pointer] = [inp, self.player.score]
+                        
+                            
+
+
                         with open(path.join(self.dir, HIGHSCORE_FILE), 'w') as f:
-                            f.write(str(self.player.score))
-                    
+                            f.write(self.highscore[0][0] + "\n")
+                            
+                            f.write(str(self.highscore[0][1]) + "\n")
+                            
+                            f.write(self.highscore[1][0] + "\n")
+                            
+                            f.write(str(self.highscore[1][1]) + "\n")
+                            
+                            f.write(self.highscore[2][0] + "\n")
+                            
+                            f.write(str(self.highscore[2][1]))
+
+
                     temp_x_speed = self.player.x_speed
                     temp_y_speed = self.player.y_speed
                     # restarting game
@@ -681,9 +710,24 @@ class Game(object):
             center_y = (SCREEN_HEIGHT // 2) - (text.get_height() // 2)
             screen.blit(text, [center_x, center_y])
 
-            text = font.render("High score: " + str(self.highscore), True, BLACK)
+            text = font.render("Leaderboard: ", True, BLACK)
             center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
             center_y = (SCREEN_HEIGHT // 2) - (text.get_height() // 2) + 30
+            screen.blit(text, [center_x, center_y])
+
+            text = font.render(self.highscore[0][0] + " " + str(self.highscore[0][1]), True, BLACK)
+            center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
+            center_y = (SCREEN_HEIGHT // 2) - (text.get_height() // 2) + 60
+            screen.blit(text, [center_x, center_y])
+
+            text = font.render(self.highscore[1][0] + " " + str(self.highscore[1][1]), True, BLACK)
+            center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
+            center_y = (SCREEN_HEIGHT // 2) - (text.get_height() // 2) + 90
+            screen.blit(text, [center_x, center_y])
+
+            text = font.render(self.highscore[2][0] + " " + str(self.highscore[2][1]), True, BLACK)
+            center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
+            center_y = (SCREEN_HEIGHT // 2) - (text.get_height() // 2) + 120
             screen.blit(text, [center_x, center_y])
 
         pygame.display.flip()
