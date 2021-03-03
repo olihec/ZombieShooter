@@ -192,8 +192,8 @@ class Player(pygame.sprite.Sprite):
         self.image = self.original_image
         self.image.fill(RED)
         self.rect = self.image.get_rect()
-        self.rect.x = SCREEN_WIDTH // 2
-        self.rect.y = SCREEN_HEIGHT // 2
+        self.rect.x = 440
+        self.rect.y = 342
 
         self.angle = 0
         self.x_speed = 0
@@ -290,8 +290,10 @@ class Game(object):
                 self.highscore = [["xxx", 0], ["xxx", 0], ["xxx", 0]]
 
 
-        # variable to determine when the game is on start screen of not 
+        # variable to determine when the game is on start screen or shop 
         self.game_start = False
+        self.shop_screen = False
+        self.round_over = False
 
         # Sprite groups
         self.all_sprites_list = pygame.sprite.Group()
@@ -300,6 +302,7 @@ class Game(object):
         self.zombie_list = pygame.sprite.Group()
         self.powerup_list = pygame.sprite.Group()
         self.money_list = pygame.sprite.Group()
+        self.shop_list = pygame.sprite.Group()
 
         # timer in game used for bullets and zombies
         self.timer = 0
@@ -322,7 +325,7 @@ class Game(object):
                     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
                     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
                     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
                     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
                     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
                     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
@@ -376,6 +379,7 @@ class Game(object):
 
         self.shop = Shop(460, 300)
         self.all_sprites_list.add(self.shop)
+        self.shop_list.add(self.shop)
     def process_events(self):
         # Process all of the events. Return a "True" if we need
         #    to close the window. 
@@ -436,16 +440,19 @@ class Game(object):
         if self.game_start:
             # Create zombie 
             if self.timer % 120 == 0:
-                zombie_created = False
-                while zombie_created == False:
-                    x = random.randint(-15, 1000)
-                    y = random.randint(-15, 700)
-                    # check is zombie is out of screen
-                    if x == -15 or x == 1000 or y == -15 or y == 700:
-                        zombie_created = True
-                        self.zombie = Zombie(x,y)
-                        self.all_sprites_list.add(self.zombie)
-                        self.zombie_list.add(self.zombie)
+                if not(self.round_over):
+                    zombie_created = False
+                    while zombie_created == False:
+                        x = random.randint(-15, 1000)
+                        y = random.randint(-15, 700)
+                        # check is zombie is out of screen
+                        if x == -15 or x == 1000 or y == -15 or y == 700:
+                            zombie_created = True
+                            self.zombie = Zombie(x,y)
+                            self.all_sprites_list.add(self.zombie)
+                            self.zombie_list.add(self.zombie)
+            elif self.timer % 2500 == 0:
+                self.round_over = True
 
             # make the timer increase every second
             self.timer = self.timer + 1
@@ -562,6 +569,7 @@ class Game(object):
 
                     temp_x_speed = self.player.x_speed
                     temp_y_speed = self.player.y_speed
+
                     # restarting game
                     # variable to determine when the game is on start screen of not 
                     self.game_start = False
@@ -650,6 +658,12 @@ class Game(object):
 
                     self.shop = Shop(460, 300)
                     self.all_sprites_list.add(self.shop)
+                    self.shop_list.add(self.shop)
+            
+
+
+            
+
 
             # check for collision with powerup 
             powerup_hit = pygame.sprite.spritecollide(self.player, self.powerup_list, True) 
@@ -693,7 +707,14 @@ class Game(object):
             # update sprite position
             self.player.rect.x = self.player.rect.x + self.player.x_speed
             
-        
+            # check for collision with the shop
+            if pygame.sprite.spritecollide(self.player, self.shop_list, False):
+                if self.player.x_speed > 0:
+                    self.player.rect.right = self.shop.rect.left
+                elif self.player.x_speed < 0:
+                    self.player.rect.left = self.shop.rect.right
+                
+
             # making it so player can't pass through tree
             tree_hit_list = pygame.sprite.spritecollide(self.player, self.tree_list, False)
             for self.tree in tree_hit_list:
@@ -704,6 +725,12 @@ class Game(object):
                 
             self.player.rect.y = self.player.rect.y + self.player.y_speed
 
+            if pygame.sprite.spritecollide(self.player, self.shop_list, False):
+                if self.player.y_speed > 0:
+                        self.player.rect.bottom = self.shop.rect.top
+                elif self.player.y_speed < 0:
+                    self.player.rect.top = self.shop.rect.bottom
+
             tree_hit_list = pygame.sprite.spritecollide(self.player, self.tree_list, False)
             for self.tree in tree_hit_list:
                 if self.player.y_speed > 0:
@@ -711,10 +738,21 @@ class Game(object):
                 else:
                     self.player.rect.top = self.tree.rect.bottom
 
+            
+            
+            
             for self.zombie in self.zombie_list:
                 # make the zombies unable to pass through trees when in map
                 
                 self.zombie.rect.x = self.zombie.rect.x + self.zombie.x_speed
+
+                # check for collision with the shop
+                if pygame.sprite.spritecollide(self.zombie, self.shop_list, False):
+                    if self.zombie.x_speed > 0:
+                        self.zombie.rect.right = self.shop.rect.left
+                    elif self.zombie.x_speed < 0:
+                        self.zombie.rect.left = self.shop.rect.right
+                
                 
                 if self.zombie.entered_map == True:    
                     tree_hit_list = pygame.sprite.spritecollide(self.zombie, self.tree_list, False)
@@ -725,6 +763,12 @@ class Game(object):
                             self.zombie.rect.left = self.tree.rect.right
                         
                 self.zombie.rect.y = self.zombie.rect.y + self.zombie.y_speed
+
+                if pygame.sprite.spritecollide(self.zombie, self.shop_list, False):
+                    if self.zombie.y_speed > 0:
+                            self.zombie.rect.bottom = self.shop.rect.top
+                    elif self.zombie.y_speed < 0:
+                        self.zombie.rect.top = self.shop.rect.bottom
 
                 if self.zombie.entered_map == True:
                     tree_hit_list = pygame.sprite.spritecollide(self.zombie, self.tree_list, False)
@@ -755,7 +799,10 @@ class Game(object):
             text = self.player.font.render("Money: " + str(self.player.money),True,WHITE)
             screen.blit(text, [660, 2])
     
-            
+        elif self.shop_screen:
+            # display the screen for the shop 
+            screen.fill(BROWN)
+
         else:
             screen.fill(WHITE)
 
