@@ -290,8 +290,68 @@ class Game(object):
                 self.highscore = [["xxx", 0], ["xxx", 0], ["xxx", 0]]
 
 
-        # variable to determine when the game is on start screen or shop 
-        self.game_start = False
+        self.restart(0, 0, 0, 0 ,3, False)
+
+    def process_events(self):
+        # Process all of the events. Return a "True" if we need
+        #    to close the window. 
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return True
+            # bullet shooting
+            
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if self.game_start:
+                    if self.player.gun_reloaded == True:
+                        self.player.gun_reloaded = False
+                        self.player.shot_timer = 0
+                        if self.player.gun == "Pistol":
+                            self.bullet = Bullet(self.player.player_centre_x, self.player.player_centre_y, self.player.gun)
+                            self.all_sprites_list.add(self.bullet)
+                            self.bullet_list.add(self.bullet)
+                        elif self.player.gun == "Shotgun":
+                            for i in range(5):
+                                self.bullet = Bullet(self.player.player_centre_x, self.player.player_centre_y, self.player.gun)
+                                self.all_sprites_list.add(self.bullet)
+                                self.bullet_list.add(self.bullet)
+                else:
+                    self.game_start = True
+                    if self.shop_screen:
+                        self.restart(self.player.x_speed, self.player.y_speed, self.player.money, self.player.score, self.player.lives, self.game_start)
+                        self.shop_screen = False
+            
+            # Player movement code
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_w:
+                    self.player.move(0,-self.player.speed)
+                if event.key == pygame.K_s:
+                    self.player.move(0,self.player.speed)
+                if event.key == pygame.K_a:
+                    self.player.move(-self.player.speed,0)
+                if event.key == pygame.K_d:
+                    self.player.move(self.player.speed,0)
+            
+            # Code to stop the player moving when key is released
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_w:
+                    self.player.move(0,self.player.speed)
+                if event.key == pygame.K_s:
+                    self.player.move(0,-self.player.speed)
+                if event.key == pygame.K_a:
+                    self.player.move(self.player.speed,0)
+                if event.key == pygame.K_d:
+                    self.player.move(-self.player.speed,0)
+            
+
+        return False
+    
+    def restart(self, player_x_speed, player_y_speed, money, score, lives, game_start):
+        # method for restarting the game 
+
+        # restarting game
+        # variable to determine when the game is on start screen of not 
+        self.game_start = game_start
         self.shop_screen = False
         self.round_over = False
 
@@ -368,6 +428,11 @@ class Game(object):
         # Create the player
 
         self.player = Player()
+        self.player.x_speed = player_x_speed
+        self.player.y_speed = player_y_speed
+        self.player.score = score
+        self.player.lives = lives
+        self.player.money = money
         self.all_sprites_list.add(self.player)
 
         
@@ -380,63 +445,15 @@ class Game(object):
         self.shop = Shop(460, 300)
         self.all_sprites_list.add(self.shop)
         self.shop_list.add(self.shop)
-    def process_events(self):
-        # Process all of the events. Return a "True" if we need
-        #    to close the window. 
-        
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                return True
-            # bullet shooting
-            
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if self.game_start:
-                    if self.player.gun_reloaded == True:
-                        self.player.gun_reloaded = False
-                        self.player.shot_timer = 0
-                        if self.player.gun == "Pistol":
-                            self.bullet = Bullet(self.player.player_centre_x, self.player.player_centre_y, self.player.gun)
-                            self.all_sprites_list.add(self.bullet)
-                            self.bullet_list.add(self.bullet)
-                        elif self.player.gun == "Shotgun":
-                            for i in range(5):
-                                self.bullet = Bullet(self.player.player_centre_x, self.player.player_centre_y, self.player.gun)
-                                self.all_sprites_list.add(self.bullet)
-                                self.bullet_list.add(self.bullet)
-                else:
-                    self.game_start = True
-            
-            # Player movement code
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_w:
-                    self.player.move(0,-self.player.speed)
-                if event.key == pygame.K_s:
-                    self.player.move(0,self.player.speed)
-                if event.key == pygame.K_a:
-                    self.player.move(-self.player.speed,0)
-                if event.key == pygame.K_d:
-                    self.player.move(self.player.speed,0)
-            
-            # Code to stop the player moving when key is released
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_w:
-                    self.player.move(0,self.player.speed)
-                if event.key == pygame.K_s:
-                    self.player.move(0,-self.player.speed)
-                if event.key == pygame.K_a:
-                    self.player.move(self.player.speed,0)
-                if event.key == pygame.K_d:
-                    self.player.move(-self.player.speed,0)
-            
 
-        return False
- 
+
     def run_logic(self):
         
         #This method is run each time through the frame. It
         #updates positions and checks for collisions.
 
-        
+        if self.shop_screen:
+            pass
         if self.game_start:
             # Create zombie 
             if self.timer % 120 == 0:
@@ -451,12 +468,13 @@ class Game(object):
                             self.zombie = Zombie(x,y)
                             self.all_sprites_list.add(self.zombie)
                             self.zombie_list.add(self.zombie)
-            elif self.timer % 2500 == 0:
+            elif self.timer % 200 == 0:
                 self.round_over = True
 
             # make the timer increase every second
             self.timer = self.timer + 1
 
+            
             # give the zombie the players co ords so it can follow
             for self.zombie in self.zombie_list:
                 self.zombie.player_centre_x = self.player.player_centre_x
@@ -567,99 +585,7 @@ class Game(object):
                             f.write(str(self.highscore[2][1]))
 
 
-                    temp_x_speed = self.player.x_speed
-                    temp_y_speed = self.player.y_speed
-
-                    # restarting game
-                    # variable to determine when the game is on start screen of not 
-                    self.game_start = False
-
-                    # Sprite groups
-                    self.all_sprites_list = pygame.sprite.Group()
-                    self.bullet_list = pygame.sprite.Group()
-                    self.tree_list = pygame.sprite.Group()
-                    self.zombie_list = pygame.sprite.Group()
-                    self.powerup_list = pygame.sprite.Group()
-
-                    # timer in game used for bullets and zombies
-                    self.timer = 0
-
-                    # Creating the map of trees
-                    self.map = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                                ]
-
-                    # putting in the trees randomly
-                    count = 0
-                    while count < 100:
-                        
-                        x = random.randint(1,49)
-                        y = random.randint(1,34)
-                        if self.map[y][x] == 0:
-                            self.map[y][x] = 1
-                            count = count + 1
-                
-                    # variable to keep track of where there arn't trees
-                    self.empty_spaces = []
-                    for j in range(35):
-                        for i in range(50):
-                            if self.map[j][i] == 1:
-                                self.tree = Tree(i*20,j*20)
-                                self.all_sprites_list.add(self.tree)
-                                self.tree_list.add(self.tree)
-                            else:
-                                self.empty_spaces.append((j,i))
-                    # Create the player
-
-                    self.player = Player()
-                    self.player.x_speed = temp_x_speed
-                    self.player.y_speed = temp_y_speed
-                    self.all_sprites_list.add(self.player)
-
-                    
-
-                    # Create powerup
-                    self.powerup = Powerup(600,600)
-                    self.all_sprites_list.add(self.powerup)
-                    self.powerup_list.add(self.powerup)
-
-                    self.shop = Shop(460, 300)
-                    self.all_sprites_list.add(self.shop)
-                    self.shop_list.add(self.shop)
-            
+                    self.restart(self.player.x_speed,self.player.y_speed, 0, 0, 3, False)
 
 
             
@@ -708,12 +634,20 @@ class Game(object):
             self.player.rect.x = self.player.rect.x + self.player.x_speed
             
             # check for collision with the shop
-            if pygame.sprite.spritecollide(self.player, self.shop_list, False):
-                if self.player.x_speed > 0:
-                    self.player.rect.right = self.shop.rect.left
-                elif self.player.x_speed < 0:
-                    self.player.rect.left = self.shop.rect.right
-                
+            # check if round is over to let player enter shop through door
+
+            if self.round_over:
+                # check for collision with the shop in right area
+                if pygame.sprite.spritecollide(self.player, self.shop_list, False):
+                    self.shop_screen = True
+                    self.game_start = False
+            else:
+                if pygame.sprite.spritecollide(self.player, self.shop_list, False):
+                    if self.player.x_speed > 0:
+                        self.player.rect.right = self.shop.rect.left
+                    elif self.player.x_speed < 0:
+                        self.player.rect.left = self.shop.rect.right
+                    
 
             # making it so player can't pass through tree
             tree_hit_list = pygame.sprite.spritecollide(self.player, self.tree_list, False)
@@ -725,11 +659,17 @@ class Game(object):
                 
             self.player.rect.y = self.player.rect.y + self.player.y_speed
 
-            if pygame.sprite.spritecollide(self.player, self.shop_list, False):
-                if self.player.y_speed > 0:
-                        self.player.rect.bottom = self.shop.rect.top
-                elif self.player.y_speed < 0:
-                    self.player.rect.top = self.shop.rect.bottom
+            if self.round_over:
+                # check for collision with the shop in right area
+                if pygame.sprite.spritecollide(self.player, self.shop_list, False):
+                    self.shop_screen = True
+                    self.game_start = False
+            else:
+                if pygame.sprite.spritecollide(self.player, self.shop_list, False):
+                    if self.player.y_speed > 0:
+                            self.player.rect.bottom = self.shop.rect.top
+                    elif self.player.y_speed < 0:
+                        self.player.rect.top = self.shop.rect.bottom
 
             tree_hit_list = pygame.sprite.spritecollide(self.player, self.tree_list, False)
             for self.tree in tree_hit_list:
@@ -802,6 +742,9 @@ class Game(object):
         elif self.shop_screen:
             # display the screen for the shop 
             screen.fill(BROWN)
+
+            text = self.player.font.render("Money: " + str(self.player.money),True,WHITE)
+            screen.blit(text, [660, 2])
 
         else:
             screen.fill(WHITE)
