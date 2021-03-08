@@ -468,7 +468,7 @@ class Game(object):
                             self.zombie = Zombie(x,y)
                             self.all_sprites_list.add(self.zombie)
                             self.zombie_list.add(self.zombie)
-            elif self.timer % 200 == 0:
+            elif self.timer % 2500 == 0:
                 self.round_over = True
 
             # make the timer increase every second
