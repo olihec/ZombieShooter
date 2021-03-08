@@ -40,7 +40,11 @@ class Zombie(pygame.sprite.Sprite):
         self.y_size = 15
         self.original_image = pygame.Surface([self.x_size, self.y_size])
         self.image = self.original_image
-        self.image.fill(WHITE)
+        
+        self.orig_zombie_image = pygame.image.load("zumbi.png").convert()
+        self.zombie_image = self.orig_zombie_image
+        self.zombie_image.set_colorkey(BLACK)
+
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -81,7 +85,23 @@ class Zombie(pygame.sprite.Sprite):
             self.x_speed = round(2*(self.x_difference /self.diagonal))
             self.y_speed = round(2*(self.y_difference /self.diagonal))
     
+            if self.x_difference == 0 and self.y_difference >= 0:
+                self.angle = 90
+            elif self.x_difference == 0 and self.y_difference < 0:
+                self.angle = -90
+            elif self.x_difference < 0 and self.y_difference <= 0:
+                self.angle = math.degrees(math.atan( self.y_difference / self.x_difference ))
+                self.angle = self.angle - 180
+            elif self.x_difference < 0 and self.y_difference > 0:
+                self.angle = math.degrees(math.atan( self.y_difference / self.x_difference ))
+                self.angle = 180 + self.angle
+            else:
+                self.angle = math.degrees(math.atan( self.y_difference / self.x_difference ))
         
+        # rotation for player
+
+
+            self.zombie_image = pygame.transform.rotate(self.orig_zombie_image, -self.angle)
         if self.rect.x == 20 or self.rect.x == 965 or self.rect.y == 20 or self.rect.y == 665:
             self.entered_map = True
 
@@ -744,7 +764,10 @@ class Game(object):
             for i in range(self.player.lives):
                 screen.blit(self.player.heart_image, [i * 20 + 900, 2])
 
+            #player and zombie images
             screen.blit(self.player.player_image, [self.player.rect.x, self.player.rect.y])
+            for self.zombie in self.zombie_list:
+                screen.blit(self.zombie.zombie_image, [self.zombie.rect.x, self.zombie.rect.y])
 
             text = self.player.font.render("Score: " + str(self.player.score),True,WHITE)
             screen.blit(text, [780, 2])
