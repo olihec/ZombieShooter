@@ -190,7 +190,14 @@ class Player(pygame.sprite.Sprite):
         self.y_size = 15
         self.original_image = pygame.Surface([self.x_size, self.y_size])
         self.image = self.original_image
-        self.image.fill(RED)
+        
+        self.orig_player_image = pygame.image.load("player.png").convert()
+        self.player_image = self.orig_player_image
+        self.player_image.set_colorkey(BLACK)
+
+        self.orig_rect = self.player_image.get_rect()
+        
+
         self.rect = self.image.get_rect()
         self.rect.x = 440
         self.rect.y = 342
@@ -234,8 +241,8 @@ class Player(pygame.sprite.Sprite):
 
     def update(self):
         
-    
-
+        
+        
 
         if self.gun_reloaded == False:
             self.shot_timer = self.shot_timer + 1
@@ -268,7 +275,10 @@ class Player(pygame.sprite.Sprite):
             self.angle = math.degrees(math.atan( y_difference / x_difference ))
         
         # rotation for player
-        self.image = pygame.transform.rotate(self.original_image, self.angle)
+
+
+        self.player_image = pygame.transform.rotate(self.orig_player_image, self.angle)
+        
         
  
 class Game(object):
@@ -733,6 +743,8 @@ class Game(object):
             # drawing the hearts and score and money of the player
             for i in range(self.player.lives):
                 screen.blit(self.player.heart_image, [i * 20 + 900, 2])
+
+            screen.blit(self.player.player_image, [self.player.rect.x, self.player.rect.y])
 
             text = self.player.font.render("Score: " + str(self.player.score),True,WHITE)
             screen.blit(text, [780, 2])
