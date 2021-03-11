@@ -588,7 +588,7 @@ class Game(object):
                             pointer = count
                             found = True
                         count = count + 1
-                    count = count - 1
+                    
                     if pointer != 999:
                         count = 2
                         while count != pointer:
