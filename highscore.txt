@@ -1,6 +1,6 @@
+Cool
+360
 Oli
-250
-Olu
-170
- Adriel
-150
+300
+Test
+255
