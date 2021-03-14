@@ -26,7 +26,7 @@ class Shop(pygame.sprite.Sprite):
         self.x_size = 100
         self.y_size = 100
         self.image = pygame.Surface([self.x_size, self.y_size])
-        self.image.fill(BROWN)
+        self.shop_image = pygame.image.load("shop.png").convert()
 
         self.rect = self.image.get_rect()
         self.rect.x = x
@@ -98,7 +98,7 @@ class Zombie(pygame.sprite.Sprite):
             else:
                 self.angle = math.degrees(math.atan( self.y_difference / self.x_difference ))
         
-        # rotation for player
+        
 
 
             self.zombie_image = pygame.transform.rotate(self.orig_zombie_image, -self.angle)
@@ -127,29 +127,48 @@ class Tree(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
         self.image = pygame.Surface([20,20])
-        self.image.fill(DARK_GREEN)
+       
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
         self.health = 50
+
+        self.tree_image = pygame.image.load("tree.png").convert()
+      
+        self.tree_image.set_colorkey(BLACK)
+        
 
 class Money(pygame.sprite.Sprite):
     # this is the class for our Money in the map that spawns under trees and zombies
     def __init__(self, x, y):
         super().__init__()
         self.image = pygame.Surface([10,10])
-        self.image.fill(BLACK)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+
+        # list for our animated coin and pointer
+        self.image_timer = 0
+        self.image_pointer = 0
+        self.image_list = ["coin1.png", "coin2.png", "coin3.png", "coin4.png", "coin5.png", "coin6.png", "coin7.png", "coin8.png"]
+        self.money_image = pygame.image.load("coin1.png").convert()
+        self.money_image.set_colorkey(BLACK)
+
+    def update(self):
+
+        self.image_timer = self.image_timer + 1
+        if self.image_timer % 5 == 0:
+            self.image_pointer = (self.image_pointer + 1) % 8
+        self.money_image = pygame.image.load(self.image_list[self.image_pointer]).convert()
+        self.money_image.set_colorkey(BLACK)
 
 class Bullet(pygame.sprite.Sprite):
     # This is the class for our bullets that the player will shoot
     def __init__(self, x, y, gun):
         # constructor
         super().__init__()
-        self.x_size = 5
-        self.y_size = 5
+        self.x_size = 4
+        self.y_size = 4
         self.image = pygame.Surface([self.x_size, self.y_size])
         self.image.fill(BLACK)
         self.rect = self.image.get_rect()
@@ -384,6 +403,7 @@ class Game(object):
         self.game_start = game_start
         self.shop_screen = False
         self.round_over = False
+        self.background_image = pygame.image.load("lea.png").convert()
 
         # Sprite groups
         self.all_sprites_list = pygame.sprite.Group()
@@ -588,7 +608,7 @@ class Game(object):
                             pointer = count
                             found = True
                         count = count + 1
-                    
+                      
                     if pointer != 999:
                         count = 2
                         while count != pointer:
@@ -754,25 +774,38 @@ class Game(object):
 
         if self.game_start:
             # Display everything to the screen for the game. 
-            screen.fill(GREEN)
+            self.background_image = pygame.image.load("lea.png").convert()
+            screen.blit(self.background_image, [0, 0])
 
 
             # draw all the sprites
             self.all_sprites_list.draw(screen)
 
-            # drawing the hearts and score and money of the player
-            for i in range(self.player.lives):
-                screen.blit(self.player.heart_image, [i * 20 + 900, 2])
+            
 
             #player and zombie images
             screen.blit(self.player.player_image, [self.player.rect.x, self.player.rect.y])
             for self.zombie in self.zombie_list:
                 screen.blit(self.zombie.zombie_image, [self.zombie.rect.x, self.zombie.rect.y])
 
+            screen.blit(self.shop.shop_image, [self.shop.rect.x, self.shop.rect.y])
+
+            # drawing tree images
+            for self.tree in self.tree_list:
+                screen.blit(self.tree.tree_image, [self.tree.rect.x, self.tree.rect.y])
+
+            for self.money in self.money_list:
+                screen.blit(self.money.money_image, [self.money.rect.x, self.money.rect.y])
+
             text = self.player.font.render("Score: " + str(self.player.score),True,WHITE)
             screen.blit(text, [780, 2])
             text = self.player.font.render("Money: " + str(self.player.money),True,WHITE)
             screen.blit(text, [660, 2])
+
+            # drawing the hearts and score and money of the player
+            for i in range(self.player.lives):
+                screen.blit(self.player.heart_image, [i * 20 + 900, 2])
+            
     
         elif self.shop_screen:
             # display the screen for the shop 
@@ -782,33 +815,55 @@ class Game(object):
             screen.blit(text, [660, 2])
 
         else:
-            screen.fill(WHITE)
+            self.background_image = pygame.image.load("start_screen.jpg").convert()
+            screen.blit(self.background_image, [0, 0])
 
-            font = pygame.font.SysFont("serif", 25)
-            text = font.render("ZOMBIE SHOOTER, click to start", True, BLACK)
+            font = pygame.font.SysFont("YouMurderer BB", 220)
+            text = font.render("ZOMBIE", True, RED)
             center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
-            center_y = (SCREEN_HEIGHT // 2) - (text.get_height() // 2)
+            center_y = 30
             screen.blit(text, [center_x, center_y])
 
-            text = font.render("Leaderboard: ", True, BLACK)
+            font = pygame.font.SysFont("YouMurderer BB", 220)
+            text = font.render("SHOOTER", True, RED)
+            center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
+            center_y = 170
+            screen.blit(text, [center_x, center_y])
+
+            self.leaderboard_image = pygame.image.load("leaderboard.png").convert()
+            self.leaderboard_image.set_colorkey(BLACK)
+            center_x = (SCREEN_WIDTH // 2) - (self.leaderboard_image.get_width() // 2)
+
+            screen.blit(self.leaderboard_image, [center_x, 320])
+
+            font = pygame.font.SysFont("YouMurderer BB", 50)
+            text = font.render("Leaderboard: ", True, WHITE)
             center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
             center_y = (SCREEN_HEIGHT // 2) - (text.get_height() // 2) + 30
             screen.blit(text, [center_x, center_y])
 
-            text = font.render(self.highscore[0][0] + " " + str(self.highscore[0][1]), True, BLACK)
-            center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
-            center_y = (SCREEN_HEIGHT // 2) - (text.get_height() // 2) + 60
-            screen.blit(text, [center_x, center_y])
-
-            text = font.render(self.highscore[1][0] + " " + str(self.highscore[1][1]), True, BLACK)
+            text = font.render(self.highscore[0][0] + " " + str(self.highscore[0][1]), True, WHITE)
             center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
             center_y = (SCREEN_HEIGHT // 2) - (text.get_height() // 2) + 90
             screen.blit(text, [center_x, center_y])
 
-            text = font.render(self.highscore[2][0] + " " + str(self.highscore[2][1]), True, BLACK)
+            text = font.render(self.highscore[1][0] + " " + str(self.highscore[1][1]), True, WHITE)
             center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
             center_y = (SCREEN_HEIGHT // 2) - (text.get_height() // 2) + 120
             screen.blit(text, [center_x, center_y])
+
+            text = font.render(self.highscore[2][0] + " " + str(self.highscore[2][1]), True, WHITE)
+            center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
+            center_y = (SCREEN_HEIGHT // 2) - (text.get_height() // 2) + 150
+            screen.blit(text, [center_x, center_y])
+
+
+            font = pygame.font.SysFont("YouMurderer BB", 20)
+            text = font.render("", True, WHITE)
+            center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
+            center_y = (SCREEN_HEIGHT // 2) - (text.get_height() // 2) + 30
+            screen.blit(text, [center_x, 510])
+
 
         pygame.display.flip()
 def main():
