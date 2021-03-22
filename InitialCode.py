@@ -277,15 +277,7 @@ class Player(pygame.sprite.Sprite):
         self.x_speed = self.x_speed + x_speed
         self.y_speed = self.y_speed + y_speed
         
-
-    def update(self):
-        
-        
-        
-
-        if self.gun_reloaded == False:
-            self.shot_timer = self.shot_timer + 1
-
+    def rotate(self):
 
         # making the sprite rotate
         # mouse/target position
@@ -317,6 +309,17 @@ class Player(pygame.sprite.Sprite):
 
 
         self.player_image = pygame.transform.rotate(self.orig_player_image, self.angle)
+
+    def update(self):
+        
+        
+        
+
+        if self.gun_reloaded == False:
+            self.shot_timer = self.shot_timer + 1
+
+
+        self.rotate()
         
         
  
