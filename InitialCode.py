@@ -59,6 +59,37 @@ class Zombie(pygame.sprite.Sprite):
 
         self.player_centre_x = 0
         self.player_centre_y = 0
+
+    def follow_player(self):
+        # making the zombie follow the player
+        self.zombie_centre_x = self.rect.x + self.x_size / 2
+        self.zombie_centre_y = self.rect.y + self.y_size / 2
+
+        self.y_difference = self.player_centre_y - self.zombie_centre_y
+        self.x_difference = self.player_centre_x - self.zombie_centre_x
+        
+        self.diagonal = math.sqrt((self.y_difference ** 2) + (self.x_difference ** 2))
+        
+        self.x_speed = round(2*(self.x_difference /self.diagonal))
+        self.y_speed = round(2*(self.y_difference /self.diagonal))
+
+        if self.x_difference == 0 and self.y_difference >= 0:
+            self.angle = 90
+        elif self.x_difference == 0 and self.y_difference < 0:
+            self.angle = -90
+        elif self.x_difference < 0 and self.y_difference <= 0:
+            self.angle = math.degrees(math.atan( self.y_difference / self.x_difference ))
+            self.angle = self.angle - 180
+        elif self.x_difference < 0 and self.y_difference > 0:
+            self.angle = math.degrees(math.atan( self.y_difference / self.x_difference ))
+            self.angle = 180 + self.angle
+        else:
+            self.angle = math.degrees(math.atan( self.y_difference / self.x_difference ))
+    
+    
+
+
+        self.zombie_image = pygame.transform.rotate(self.orig_zombie_image, -self.angle)
         
     def update(self):
         
@@ -73,35 +104,8 @@ class Zombie(pygame.sprite.Sprite):
             if self.rect.x > 965:
                 self.x_speed = -1
         else:
-            # making the zombie follow the player
-            self.zombie_centre_x = self.rect.x + self.x_size / 2
-            self.zombie_centre_y = self.rect.y + self.y_size / 2
+            self.follow_player()
 
-            self.y_difference = self.player_centre_y - self.zombie_centre_y
-            self.x_difference = self.player_centre_x - self.zombie_centre_x
-            
-            self.diagonal = math.sqrt((self.y_difference ** 2) + (self.x_difference ** 2))
-            
-            self.x_speed = round(2*(self.x_difference /self.diagonal))
-            self.y_speed = round(2*(self.y_difference /self.diagonal))
-    
-            if self.x_difference == 0 and self.y_difference >= 0:
-                self.angle = 90
-            elif self.x_difference == 0 and self.y_difference < 0:
-                self.angle = -90
-            elif self.x_difference < 0 and self.y_difference <= 0:
-                self.angle = math.degrees(math.atan( self.y_difference / self.x_difference ))
-                self.angle = self.angle - 180
-            elif self.x_difference < 0 and self.y_difference > 0:
-                self.angle = math.degrees(math.atan( self.y_difference / self.x_difference ))
-                self.angle = 180 + self.angle
-            else:
-                self.angle = math.degrees(math.atan( self.y_difference / self.x_difference ))
-        
-        
-
-
-            self.zombie_image = pygame.transform.rotate(self.orig_zombie_image, -self.angle)
         if self.rect.x == 20 or self.rect.x == 965 or self.rect.y == 20 or self.rect.y == 665:
             self.entered_map = True
 
@@ -277,6 +281,11 @@ class Player(pygame.sprite.Sprite):
         self.x_speed = self.x_speed + x_speed
         self.y_speed = self.y_speed + y_speed
         
+    def reload(self):
+        # check is reload time is finished
+        if self.reload_time == self.shot_timer:
+            self.gun_reloaded = True
+
     def rotate(self):
 
         # making the sprite rotate
@@ -499,152 +508,196 @@ class Game(object):
         self.all_sprites_list.add(self.shop)
         self.shop_list.add(self.shop)
 
+    def create_zombie(self):
 
-    def run_logic(self):
+        # Create zombie 
+        if self.timer % 120 == 0:
+            if not(self.round_over):
+                zombie_created = False
+                while zombie_created == False:
+                    x = random.randint(-15, 1000)
+                    y = random.randint(-15, 700)
+                    # check is zombie is out of screen
+                    if x == -15 or x == 1000 or y == -15 or y == 700:
+                        zombie_created = True
+                        self.zombie = Zombie(x,y)
+                        self.all_sprites_list.add(self.zombie)
+                        self.zombie_list.add(self.zombie)
+
+
+    def game_over(self):
+
+        # algorithm to find where in list highscore goes
+        pointer = 999
+        count = 0
+        found = False
+        while count < 3 and not(found):
+            if self.highscore[count][1] < self.player.score:
+                pointer = count
+                found = True
+            count = count + 1
+            
+        if pointer != 999:
+            count = 2
+            while count != pointer:
+                count = count - 1
+                self.highscore[count + 1] = self.highscore[count]
+            
+            inp = input("Enter name")
+            self.highscore[pointer] = [inp, self.player.score]
+            
+                
+
+
+            with open(path.join(self.dir, HIGHSCORE_FILE), 'w') as f:
+                f.write(self.highscore[0][0] + "\n")
+                
+                f.write(str(self.highscore[0][1]) + "\n")
+                
+                f.write(self.highscore[1][0] + "\n")
+                
+                f.write(str(self.highscore[1][1]) + "\n")
+                
+                f.write(self.highscore[2][0] + "\n")
+                
+                f.write(str(self.highscore[2][1]))
+
+
+        self.restart(self.player.x_speed,self.player.y_speed, 0, 0, 3, False)
+
+    def bullet_collisions(self):
+
+        # collide with zombie
+        zombie_hit = pygame.sprite.spritecollide(self.bullet, self.zombie_list, False) 
+        for self.zombie in zombie_hit:
+            self.zombie.health = self.zombie.health - self.bullet.damage
+            self.bullet_list.remove(self.bullet)
+            self.all_sprites_list.remove(self.bullet)
+            if self.zombie.health < 1:
+                    # remove zombie if its health goes below 0
+                    self.player.score = self.player.score + 10
+
+                    # dropping money on death
+                    x = random.randint(0,1)
+                    if x == 1:
+                        self.money = Money(self.zombie.zombie_centre_x,self.zombie.zombie_centre_y)
+                        self.all_sprites_list.add(self.money)
+                        self.money_list.add(self.money)
+
+                    self.zombie_list.remove(self.zombie)
+                    self.all_sprites_list.remove(self.zombie)
+        # collide with tree
+        trees_hit = pygame.sprite.spritecollide(self.bullet, self.tree_list, False)
+        for self.tree in trees_hit:
+            # checking if tree is a side tree
+            self.bullet_list.remove(self.bullet)
+            self.all_sprites_list.remove(self.bullet)
+            if not(self.tree.rect.x == 0 or self.tree.rect.x == 980 or self.tree.rect.y == 0 or self.tree.rect.y == 680):
+                
+                self.tree.health = self.tree.health - self.bullet.damage
+                self.bullet_list.remove(self.bullet)
+                self.all_sprites_list.remove(self.bullet)
+                if self.tree.health < 1:
+                    # remove tree if its health goes below 0
+                    self.player.score = self.player.score + 5
+                    # one in 3 chance for money drop
+                    x = random.randint(0,3)
+                    if x == 1:
+                        self.money = Money(self.tree.rect.x, self.tree.rect.y)
+                        self.all_sprites_list.add(self.money)
+                        self.money_list.add(self.money)
+                    self.tree_list.remove(self.tree)
+                    self.all_sprites_list.remove(self.tree)
+
+    def move_player(self):
+        # update sprite position
+        self.player.rect.x = self.player.rect.x + self.player.x_speed
         
-        #This method is run each time through the frame. It
-        #updates positions and checks for collisions.
+        # check for collision with the shop
+        # check if round is over to let player enter shop through door
 
-        if self.shop_screen:
-            pass
-        if self.game_start:
-            # Create zombie 
-            if self.timer % 120 == 0:
-                if not(self.round_over):
-                    zombie_created = False
-                    while zombie_created == False:
-                        x = random.randint(-15, 1000)
-                        y = random.randint(-15, 700)
-                        # check is zombie is out of screen
-                        if x == -15 or x == 1000 or y == -15 or y == 700:
-                            zombie_created = True
-                            self.zombie = Zombie(x,y)
-                            self.all_sprites_list.add(self.zombie)
-                            self.zombie_list.add(self.zombie)
-            elif self.timer % 2500 == 0:
-                self.round_over = True
+        if self.round_over:
+            # check for collision with the shop in right area
+            if pygame.sprite.spritecollide(self.player, self.shop_list, False):
+                self.shop_screen = True
+                self.game_start = False
+        else:
+            if pygame.sprite.spritecollide(self.player, self.shop_list, False):
+                if self.player.x_speed > 0:
+                    self.player.rect.right = self.shop.rect.left
+                elif self.player.x_speed < 0:
+                    self.player.rect.left = self.shop.rect.right
+                
 
-            # make the timer increase every second
-            self.timer = self.timer + 1
-
+        # making it so player can't pass through tree
+        tree_hit_list = pygame.sprite.spritecollide(self.player, self.tree_list, False)
+        for self.tree in tree_hit_list:
+            if self.player.x_speed > 0:
+                self.player.rect.right = self.tree.rect.left
+            else:
+                self.player.rect.left = self.tree.rect.right
             
-            # give the zombie the players co ords so it can follow
-            for self.zombie in self.zombie_list:
-                self.zombie.player_centre_x = self.player.player_centre_x
-                self.zombie.player_centre_y = self.player.player_centre_y
+        self.player.rect.y = self.player.rect.y + self.player.y_speed
+
+        if self.round_over:
+            # check for collision with the shop in right area
+            if pygame.sprite.spritecollide(self.player, self.shop_list, False):
+                self.shop_screen = True
+                self.game_start = False
+        else:
+            if pygame.sprite.spritecollide(self.player, self.shop_list, False):
+                if self.player.y_speed > 0:
+                        self.player.rect.bottom = self.shop.rect.top
+                elif self.player.y_speed < 0:
+                    self.player.rect.top = self.shop.rect.bottom
+
+        tree_hit_list = pygame.sprite.spritecollide(self.player, self.tree_list, False)
+        for self.tree in tree_hit_list:
+            if self.player.y_speed > 0:
+                self.player.rect.bottom = self.tree.rect.top
+            else:
+                self.player.rect.top = self.tree.rect.bottom
 
 
-            # update the position of all sprites
-            self.all_sprites_list.update()
-            # check is reload time is finished
-            if self.player.reload_time == self.player.shot_timer:
-                self.player.gun_reloaded = True
+    def move_zombie(self):
 
-            # removing bullets from sprite list if they collide or reach range limit
-            for self.bullet in self.bullet_list:
-                # remove bullets if their range is reached
-                if self.bullet.timer == self.bullet.range:
-                    self.bullet_list.remove(self.bullet)
-                    self.all_sprites_list.remove(self.bullet)
-            
+        # make the zombies unable to pass through trees when in map
+                
+        self.zombie.rect.x = self.zombie.rect.x + self.zombie.x_speed
+
+        # check for collision with the shop
+        if pygame.sprite.spritecollide(self.zombie, self.shop_list, False):
+            if self.zombie.x_speed > 0:
+                self.zombie.rect.right = self.shop.rect.left
+            elif self.zombie.x_speed < 0:
+                self.zombie.rect.left = self.shop.rect.right
+        
+        
+        if self.zombie.entered_map == True:    
+            tree_hit_list = pygame.sprite.spritecollide(self.zombie, self.tree_list, False)
+            for self.tree in tree_hit_list:
+                if self.zombie.x_speed > 0:
+                    self.zombie.rect.right = self.tree.rect.left
                 else:
-                    # collide with zombie
-                    zombie_hit = pygame.sprite.spritecollide(self.bullet, self.zombie_list, False) 
-                    for self.zombie in zombie_hit:
-                        self.zombie.health = self.zombie.health - self.bullet.damage
-                        self.bullet_list.remove(self.bullet)
-                        self.all_sprites_list.remove(self.bullet)
-                        if self.zombie.health < 1:
-                                # remove zombie if its health goes below 0
-                                self.player.score = self.player.score + 10
+                    self.zombie.rect.left = self.tree.rect.right
+                
+        self.zombie.rect.y = self.zombie.rect.y + self.zombie.y_speed
 
-                                # dropping money on death
-                                x = random.randint(0,1)
-                                if x == 1:
-                                    self.money = Money(self.zombie.zombie_centre_x,self.zombie.zombie_centre_y)
-                                    self.all_sprites_list.add(self.money)
-                                    self.money_list.add(self.money)
+        if pygame.sprite.spritecollide(self.zombie, self.shop_list, False):
+            if self.zombie.y_speed > 0:
+                    self.zombie.rect.bottom = self.shop.rect.top
+            elif self.zombie.y_speed < 0:
+                self.zombie.rect.top = self.shop.rect.bottom
 
-                                self.zombie_list.remove(self.zombie)
-                                self.all_sprites_list.remove(self.zombie)
-                    # collide with tree
-                    trees_hit = pygame.sprite.spritecollide(self.bullet, self.tree_list, False)
-                    for self.tree in trees_hit:
-                        # checking if tree is a side tree
-                        self.bullet_list.remove(self.bullet)
-                        self.all_sprites_list.remove(self.bullet)
-                        if not(self.tree.rect.x == 0 or self.tree.rect.x == 980 or self.tree.rect.y == 0 or self.tree.rect.y == 680):
-                            
-                            self.tree.health = self.tree.health - self.bullet.damage
-                            self.bullet_list.remove(self.bullet)
-                            self.all_sprites_list.remove(self.bullet)
-                            if self.tree.health < 1:
-                                # remove tree if its health goes below 0
-                                self.player.score = self.player.score + 5
-                                # one in 3 chance for money drop
-                                x = random.randint(0,3)
-                                if x == 1:
-                                    self.money = Money(self.tree.rect.x, self.tree.rect.y)
-                                    self.all_sprites_list.add(self.money)
-                                    self.money_list.add(self.money)
-                                self.tree_list.remove(self.tree)
-                                self.all_sprites_list.remove(self.tree)
-                        
-            
-            money_collect = pygame.sprite.spritecollide(self.player, self.money_list, True) 
-            for self.money in money_collect:
-                self.player.money = self.player.money + 1
-
-            zombie_hit = pygame.sprite.spritecollide(self.player, self.zombie_list, True) 
-            for self.zombie in zombie_hit:
-                self.player.lives = self.player.lives - 1
-                self.zombie_list.remove(self.zombie)
-                self.all_sprites_list.remove(self.zombie)
-                # when player dies
-                if self.player.lives < 0:
-                    # algorithm to find where in list highscore goes
-                    pointer = 999
-                    count = 0
-                    found = False
-                    while count < 3 and not(found):
-                        if self.highscore[count][1] < self.player.score:
-                            pointer = count
-                            found = True
-                        count = count + 1
-                      
-                    if pointer != 999:
-                        count = 2
-                        while count != pointer:
-                            count = count - 1
-                            self.highscore[count + 1] = self.highscore[count]
-                        
-                        inp = input("Enter name")
-                        self.highscore[pointer] = [inp, self.player.score]
-                        
-                            
-
-
-                        with open(path.join(self.dir, HIGHSCORE_FILE), 'w') as f:
-                            f.write(self.highscore[0][0] + "\n")
-                            
-                            f.write(str(self.highscore[0][1]) + "\n")
-                            
-                            f.write(self.highscore[1][0] + "\n")
-                            
-                            f.write(str(self.highscore[1][1]) + "\n")
-                            
-                            f.write(self.highscore[2][0] + "\n")
-                            
-                            f.write(str(self.highscore[2][1]))
-
-
-                    self.restart(self.player.x_speed,self.player.y_speed, 0, 0, 3, False)
-
-
-            
-
-
-            # check for collision with powerup 
+        if self.zombie.entered_map == True:
+            tree_hit_list = pygame.sprite.spritecollide(self.zombie, self.tree_list, False)
+            for self.tree in tree_hit_list:
+                if self.zombie.y_speed > 0:
+                    self.zombie.rect.bottom = self.tree.rect.top
+                else:
+                    self.zombie.rect.top = self.tree.rect.bottom            
+    def powerup_collisions(self):
+        # check for collision with powerup 
             powerup_hit = pygame.sprite.spritecollide(self.player, self.powerup_list, True) 
             for self.powerup in powerup_hit:
                 # defining what each powerup does by its name
@@ -668,6 +721,62 @@ class Game(object):
 
                 self.powerup_list.remove(self.powerup)
                 self.all_sprites_list.remove(self.powerup)
+    def run_logic(self):
+        
+        #This method is run each time through the frame. It
+        #updates positions and checks for collisions.
+
+        if self.shop_screen:
+            pass
+        if self.game_start:
+            self.create_zombie()
+            if self.timer % 2500 == 0 and self.timer != 0:
+                self.round_over = True
+
+            # make the timer increase every second
+            self.timer = self.timer + 1
+
+            
+            # give the zombie the players co ords so it can follow
+            for self.zombie in self.zombie_list:
+                self.zombie.player_centre_x = self.player.player_centre_x
+                self.zombie.player_centre_y = self.player.player_centre_y
+
+
+            # update the position of all sprites
+            self.all_sprites_list.update()
+            
+            self.player.reload()
+
+            # removing bullets from sprite list if they collide or reach range limit
+            for self.bullet in self.bullet_list:
+                # remove bullets if their range is reached
+                if self.bullet.timer == self.bullet.range:
+                    self.bullet_list.remove(self.bullet)
+                    self.all_sprites_list.remove(self.bullet)
+            
+                else:
+                    self.bullet_collisions()
+                        
+            
+            money_collect = pygame.sprite.spritecollide(self.player, self.money_list, True) 
+            for self.money in money_collect:
+                self.player.money = self.player.money + 1
+
+            zombie_hit = pygame.sprite.spritecollide(self.player, self.zombie_list, True) 
+            for self.zombie in zombie_hit:
+                self.player.lives = self.player.lives - 1
+                self.zombie_list.remove(self.zombie)
+                self.all_sprites_list.remove(self.zombie)
+                # when player dies
+                if self.player.lives < 0:
+                    self.game_over()
+
+
+            
+
+
+            self.powerup_collisions()
             
             # turning off timed powerups
             if self.player.powerup_type == "Speed":
@@ -683,93 +792,11 @@ class Game(object):
                     self.player.speed = 5
 
 
-            # update sprite position
-            self.player.rect.x = self.player.rect.x + self.player.x_speed
-            
-            # check for collision with the shop
-            # check if round is over to let player enter shop through door
-
-            if self.round_over:
-                # check for collision with the shop in right area
-                if pygame.sprite.spritecollide(self.player, self.shop_list, False):
-                    self.shop_screen = True
-                    self.game_start = False
-            else:
-                if pygame.sprite.spritecollide(self.player, self.shop_list, False):
-                    if self.player.x_speed > 0:
-                        self.player.rect.right = self.shop.rect.left
-                    elif self.player.x_speed < 0:
-                        self.player.rect.left = self.shop.rect.right
-                    
-
-            # making it so player can't pass through tree
-            tree_hit_list = pygame.sprite.spritecollide(self.player, self.tree_list, False)
-            for self.tree in tree_hit_list:
-                if self.player.x_speed > 0:
-                    self.player.rect.right = self.tree.rect.left
-                else:
-                    self.player.rect.left = self.tree.rect.right
-                
-            self.player.rect.y = self.player.rect.y + self.player.y_speed
-
-            if self.round_over:
-                # check for collision with the shop in right area
-                if pygame.sprite.spritecollide(self.player, self.shop_list, False):
-                    self.shop_screen = True
-                    self.game_start = False
-            else:
-                if pygame.sprite.spritecollide(self.player, self.shop_list, False):
-                    if self.player.y_speed > 0:
-                            self.player.rect.bottom = self.shop.rect.top
-                    elif self.player.y_speed < 0:
-                        self.player.rect.top = self.shop.rect.bottom
-
-            tree_hit_list = pygame.sprite.spritecollide(self.player, self.tree_list, False)
-            for self.tree in tree_hit_list:
-                if self.player.y_speed > 0:
-                    self.player.rect.bottom = self.tree.rect.top
-                else:
-                    self.player.rect.top = self.tree.rect.bottom
-
-            
+            self.move_player()
             
             
             for self.zombie in self.zombie_list:
-                # make the zombies unable to pass through trees when in map
-                
-                self.zombie.rect.x = self.zombie.rect.x + self.zombie.x_speed
-
-                # check for collision with the shop
-                if pygame.sprite.spritecollide(self.zombie, self.shop_list, False):
-                    if self.zombie.x_speed > 0:
-                        self.zombie.rect.right = self.shop.rect.left
-                    elif self.zombie.x_speed < 0:
-                        self.zombie.rect.left = self.shop.rect.right
-                
-                
-                if self.zombie.entered_map == True:    
-                    tree_hit_list = pygame.sprite.spritecollide(self.zombie, self.tree_list, False)
-                    for self.tree in tree_hit_list:
-                        if self.zombie.x_speed > 0:
-                            self.zombie.rect.right = self.tree.rect.left
-                        else:
-                            self.zombie.rect.left = self.tree.rect.right
-                        
-                self.zombie.rect.y = self.zombie.rect.y + self.zombie.y_speed
-
-                if pygame.sprite.spritecollide(self.zombie, self.shop_list, False):
-                    if self.zombie.y_speed > 0:
-                            self.zombie.rect.bottom = self.shop.rect.top
-                    elif self.zombie.y_speed < 0:
-                        self.zombie.rect.top = self.shop.rect.bottom
-
-                if self.zombie.entered_map == True:
-                    tree_hit_list = pygame.sprite.spritecollide(self.zombie, self.tree_list, False)
-                    for self.tree in tree_hit_list:
-                        if self.zombie.y_speed > 0:
-                            self.zombie.rect.bottom = self.tree.rect.top
-                        else:
-                            self.zombie.rect.top = self.tree.rect.bottom
+                self.move_zombie()
                 
 
         
