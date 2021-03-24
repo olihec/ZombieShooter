@@ -181,10 +181,13 @@ class Bullet(pygame.sprite.Sprite):
         self.damage = 10
 
         self.range = 40
-        
+        self.gun = gun
 
         # variable to check how long bullet has been shot for (range)
         self.timer = 0
+        self.shoot()
+
+    def shoot(self):
         # mouse position when bullet is shot
 
         pos = pygame.mouse.get_pos()
@@ -202,7 +205,7 @@ class Bullet(pygame.sprite.Sprite):
         
         self.diagonal = math.sqrt((self.y_difference ** 2) + (self.x_difference ** 2))
 
-        if gun == "Shotgun":
+        if self.gun == "Shotgun":
             self.damage = 20
             self.range = 10
 
