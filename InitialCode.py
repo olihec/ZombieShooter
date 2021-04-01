@@ -114,7 +114,7 @@ class Powerup(pygame.sprite.Sprite):
     # this is the class to give the player powerups
     def __init__(self, x, y):
         super().__init__()
-        self.image = pygame.Surface([10,10])
+        self.image = pygame.Surface([50,50])
         self.image.fill(YELLOW)
         self.rect = self.image.get_rect()
         self.rect.x = x
@@ -124,6 +124,11 @@ class Powerup(pygame.sprite.Sprite):
         powerup_list = ["Shotgun", "Speed"]
         x = random.randint(0, len(powerup_list) - 1)
         self.type = powerup_list[x]
+
+        if self.type == "Shotgun":
+            self.cost = 5
+        elif self.type == "Speed":
+            self.cost = 4
      
 
 class Tree(pygame.sprite.Sprite):
@@ -229,7 +234,7 @@ class Bullet(pygame.sprite.Sprite):
 
 class Player(pygame.sprite.Sprite):
     # this is the class for the player
-    def __init__(self):
+    def __init__(self, x, y):
         # constructor for the class, defining it's attributes
         super().__init__()
         self.x_size = 15
@@ -245,8 +250,8 @@ class Player(pygame.sprite.Sprite):
         
 
         self.rect = self.image.get_rect()
-        self.rect.x = 440
-        self.rect.y = 342
+        self.rect.x = x
+        self.rect.y = y
 
         self.angle = 0
         self.x_speed = 0
@@ -267,9 +272,7 @@ class Player(pygame.sprite.Sprite):
         self.shot_timer = 0
         self.gun_reloaded = True
 
-        # variables to help player with powerups
-        self.powerup_timer = 0
-        self.powerup_type = ""
+        
 
         # image for the hearts
         self.heart_image = pygame.image.load("heart.png").convert()
@@ -354,7 +357,7 @@ class Game(object):
                 self.highscore = [["xxx", 0], ["xxx", 0], ["xxx", 0]]
 
 
-        self.restart(0, 0, 0, 0 ,3, False)
+        self.restart(0, 0, 0, 0 , 3 ,5, "Pistol", False)
 
     def process_events(self):
         # Process all of the events. Return a "True" if we need
@@ -382,7 +385,7 @@ class Game(object):
                 else:
                     self.game_start = True
                     if self.shop_screen:
-                        self.restart(self.player.x_speed, self.player.y_speed, self.player.money, self.player.score, self.player.lives, self.game_start)
+                        self.restart(self.player.x_speed, self.player.y_speed, self.player.money, self.player.score, self.player.lives, self.player.speed, self.player.gun, self.game_start)
                         self.shop_screen = False
             
             # Player movement code
@@ -410,7 +413,7 @@ class Game(object):
 
         return False
     
-    def restart(self, player_x_speed, player_y_speed, money, score, lives, game_start):
+    def restart(self, player_x_speed, player_y_speed, money, score, lives, speed, gun, game_start):
         # method for restarting the game 
 
         # restarting game
@@ -425,7 +428,6 @@ class Game(object):
         self.bullet_list = pygame.sprite.Group()
         self.tree_list = pygame.sprite.Group()
         self.zombie_list = pygame.sprite.Group()
-        self.powerup_list = pygame.sprite.Group()
         self.money_list = pygame.sprite.Group()
         self.shop_list = pygame.sprite.Group()
 
@@ -492,20 +494,18 @@ class Game(object):
                     self.empty_spaces.append((j,i))
         # Create the player
 
-        self.player = Player()
+        self.player = Player(500, 405)
         self.player.x_speed = player_x_speed
         self.player.y_speed = player_y_speed
         self.player.score = score
         self.player.lives = lives
         self.player.money = money
+        self.player.speed = speed
+        self.player.gun = gun
         self.all_sprites_list.add(self.player)
 
         
 
-        # Create powerup
-        self.powerup = Powerup(600,600)
-        self.all_sprites_list.add(self.powerup)
-        self.powerup_list.add(self.powerup)
 
         self.shop = Shop(460, 300)
         self.all_sprites_list.add(self.shop)
@@ -566,7 +566,7 @@ class Game(object):
                 f.write(str(self.highscore[2][1]))
 
 
-        self.restart(self.player.x_speed,self.player.y_speed, 0, 0, 3, False)
+        self.restart(self.player.x_speed,self.player.y_speed, 0, 0, 3, 5, "Pistol", False)
 
     def bullet_collisions(self):
 
@@ -612,24 +612,36 @@ class Game(object):
                     self.tree_list.remove(self.tree)
                     self.all_sprites_list.remove(self.tree)
 
-    def move_player(self):
+    def shop_move_player(self):
+        # update sprite position and keep in screen
+
+        if self.player.rect.x < 985 and self.player.rect.x > 0:
+            self.player.rect.x = self.player.rect.x + self.player.x_speed
+        elif self.player.rect.x <= 0:
+            self.player.rect.x = self.player.rect.x + self.player.speed
+        elif self.player.rect.x >= 985:
+            self.player.rect.x = self.player.rect.x - self.player.speed
+
+        if self.player.rect.y < 685 and self.player.rect.y > 0:
+            self.player.rect.y = self.player.rect.y + self.player.y_speed
+        elif self.player.rect.y <= 0:
+            self.player.rect.y = self.player.rect.y + self.player.speed
+        elif self.player.rect.y >= 685:
+            self.player.rect.y = self.player.rect.y - self.player.speed  
+
+    def gameplay_move_player(self):
         # update sprite position
         self.player.rect.x = self.player.rect.x + self.player.x_speed
         
         # check for collision with the shop
         # check if round is over to let player enter shop through door
 
-        if self.round_over:
-            # check for collision with the shop in right area
-            if pygame.sprite.spritecollide(self.player, self.shop_list, False):
-                self.shop_screen = True
-                self.game_start = False
-        else:
-            if pygame.sprite.spritecollide(self.player, self.shop_list, False):
-                if self.player.x_speed > 0:
-                    self.player.rect.right = self.shop.rect.left
-                elif self.player.x_speed < 0:
-                    self.player.rect.left = self.shop.rect.right
+        
+        if pygame.sprite.spritecollide(self.player, self.shop_list, False):
+            if self.player.x_speed > 0:
+                self.player.rect.right = self.shop.rect.left
+            elif self.player.x_speed < 0:
+                self.player.rect.left = self.shop.rect.right
                 
 
         # making it so player can't pass through tree
@@ -644,13 +656,16 @@ class Game(object):
 
         if self.round_over:
             # check for collision with the shop in right area
+            
             if pygame.sprite.spritecollide(self.player, self.shop_list, False):
-                self.shop_screen = True
-                self.game_start = False
+                if self.player.y_speed < 0:
+                    self.enter_shop(self.player.x_speed, self.player.y_speed, self.player.money, self.player.score, self.player.lives, self.player.speed, self.player.gun)
+                elif self.player.y_speed > 0:
+                    self.player.rect.bottom = self.shop.rect.top
         else:
             if pygame.sprite.spritecollide(self.player, self.shop_list, False):
                 if self.player.y_speed > 0:
-                        self.player.rect.bottom = self.shop.rect.top
+                    self.player.rect.bottom = self.shop.rect.top
                 elif self.player.y_speed < 0:
                     self.player.rect.top = self.shop.rect.bottom
 
@@ -660,6 +675,46 @@ class Game(object):
                 self.player.rect.bottom = self.tree.rect.top
             else:
                 self.player.rect.top = self.tree.rect.bottom
+
+
+    def enter_shop(self, player_x_speed, player_y_speed, money, score, lives, speed, gun):
+        # method for restarting the game 
+
+        # restarting game
+        # variable to determine when the game is on start screen of not 
+        self.game_start = False
+        self.shop_screen = True
+        self.round_over = False
+
+
+        # Sprite groups
+        self.all_sprites_list = pygame.sprite.Group() 
+        self.powerup_list = pygame.sprite.Group()
+        
+        
+
+        
+
+        # Create the player
+
+        self.player = Player(500, 685)
+        self.player.x_speed = player_x_speed
+        self.player.y_speed = player_y_speed
+        self.player.score = score
+        self.player.lives = lives
+        self.player.money = money
+        self.player.speed = speed
+        self.player.gun = gun
+        self.all_sprites_list.add(self.player)
+
+        
+
+        # Create powerup
+        for i in range(5):
+
+            self.powerup = Powerup(i * 150 + 200 ,100)
+            self.all_sprites_list.add(self.powerup)
+            self.powerup_list.add(self.powerup)
 
 
     def move_zombie(self):
@@ -701,39 +756,50 @@ class Game(object):
                     self.zombie.rect.top = self.tree.rect.bottom            
     def powerup_collisions(self):
         # check for collision with powerup 
-            powerup_hit = pygame.sprite.spritecollide(self.player, self.powerup_list, True) 
+            powerup_hit = pygame.sprite.spritecollide(self.player, self.powerup_list, False) 
             for self.powerup in powerup_hit:
-                # defining what each powerup does by its name
-                if self.powerup.type == "Shotgun":
-                    self.player.gun = self.powerup.type
-                    self.player.reload_time = 40
+                if self.player.money >= self.powerup.cost:
+                    # defining what each powerup does by its name
+                    if self.powerup.type == "Shotgun":
+                        self.player.gun = self.powerup.type
+                        self.player.reload_time = 40
 
-                elif self.powerup.type == "Speed":
-                    if self.player.x_speed > 0:
-                        self.player.x_speed = self.player.x_speed + 5
-                    if self.player.x_speed < 0:
-                        self.player.x_speed = self.player.x_speed - 5
-                    if self.player.y_speed > 0:
-                        self.player.y_speed = self.player.y_speed + 5
-                    if self.player.y_speed < 0:
-                        self.player.y_speed = self.player.y_speed - 5
-                    self.player.speed = 10
-                    self.player.powerup_timer = self.timer
-                    self.player.powerup_type = "Speed"
+                    elif self.powerup.type == "Speed":
+                        if self.player.x_speed > 0:
+                            self.player.x_speed = self.player.speed + 1
+                        if self.player.x_speed < 0:
+                            self.player.x_speed = -(self.player.speed + 1)
+                        if self.player.y_speed > 0:
+                            self.player.y_speed = self.player.speed + 1
+                        if self.player.y_speed < 0:
+                            self.player.y_speed = -(self.player.speed + 1)
+                        self.player.speed = self.player.speed + 1
 
+                    self.player.money = self.player.money - self.powerup.cost
+                    self.powerup_list.remove(self.powerup)
+                    self.all_sprites_list.remove(self.powerup)
 
-                self.powerup_list.remove(self.powerup)
-                self.all_sprites_list.remove(self.powerup)
     def run_logic(self):
         
         #This method is run each time through the frame. It
         #updates positions and checks for collisions.
 
         if self.shop_screen:
-            pass
+            # what happens in the shop
+            
+            # update the position of all sprites
+            self.all_sprites_list.update()
+            self.shop_move_player()
+            
+
+            self.powerup_collisions()
+
+        
+
+            
         if self.game_start:
             self.create_zombie()
-            if self.timer % 2500 == 0 and self.timer != 0:
+            if self.timer % 250 == 0 and self.timer != 0:
                 self.round_over = True
 
             # make the timer increase every second
@@ -779,29 +845,17 @@ class Game(object):
             
 
 
-            self.powerup_collisions()
             
-            # turning off timed powerups
-            if self.player.powerup_type == "Speed":
-                if self.timer - self.player.powerup_timer == self.player.powerup_timer + 100:
-                    if self.player.x_speed > 0:
-                        self.player.x_speed = self.player.x_speed - 5
-                    if self.player.x_speed < 0:
-                        self.player.x_speed = self.player.x_speed + 5
-                    if self.player.y_speed > 0:
-                        self.player.y_speed = self.player.y_speed - 5
-                    if self.player.y_speed < 0:
-                        self.player.y_speed = self.player.y_speed + 5
-                    self.player.speed = 5
+            
+            
 
 
-            self.move_player()
+            self.gameplay_move_player()
             
             
             for self.zombie in self.zombie_list:
                 self.move_zombie()
-                
-
+            
         
     def display_frame(self, screen):
 
@@ -811,9 +865,8 @@ class Game(object):
             screen.blit(self.background_image, [0, 0])
 
 
-            # draw all the sprites
+            
             self.all_sprites_list.draw(screen)
-
             
 
             #player and zombie images
@@ -842,10 +895,26 @@ class Game(object):
     
         elif self.shop_screen:
             # display the screen for the shop 
+            
             screen.fill(BROWN)
 
+            
+
+            self.all_sprites_list.draw(screen)
+            
+            # player image
+            screen.blit(self.player.player_image, [self.player.rect.x, self.player.rect.y])
+            
+
+
+            text = self.player.font.render("Score: " + str(self.player.score),True,WHITE)
+            screen.blit(text, [780, 2])
             text = self.player.font.render("Money: " + str(self.player.money),True,WHITE)
             screen.blit(text, [660, 2])
+
+            # drawing the hearts and score and money of the player
+            for i in range(self.player.lives):
+                screen.blit(self.player.heart_image, [i * 20 + 900, 2])
 
         else:
             self.background_image = pygame.image.load("start_screen.jpg").convert()
