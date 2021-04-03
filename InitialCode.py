@@ -659,7 +659,11 @@ class Game(object):
             
             if pygame.sprite.spritecollide(self.player, self.shop_list, False):
                 if self.player.y_speed < 0:
-                    self.enter_shop(self.player.x_speed, self.player.y_speed, self.player.money, self.player.score, self.player.lives, self.player.speed, self.player.gun)
+                    # if player collides with shop door they enter shop
+                    if self.player.rect.x > 480 and self.player.rect.x < 510:
+                        self.enter_shop(self.player.x_speed, self.player.y_speed, self.player.money, self.player.score, self.player.lives, self.player.speed, self.player.gun)
+                    else:
+                        self.player.rect.top = self.shop.rect.bottom
                 elif self.player.y_speed > 0:
                     self.player.rect.bottom = self.shop.rect.top
         else:
