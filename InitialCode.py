@@ -19,6 +19,19 @@ SCREEN_HEIGHT = 700
 HIGHSCORE_FILE = "highscore.txt"
  
 # Classes
+class Button(pygame.sprite.Sprite):
+    # this will be the class for the This will be a button that the player can press for instructions, strart, etc
+    def __init__(self, x, y):
+        super().__init__()
+        self.x_size = 200
+        self.y_size = 60
+        self.image = pygame.Surface([self.x_size, self.y_size])
+        self.image.fill(RED)
+
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
 class Shop(pygame.sprite.Sprite):
     # this will be the class for the shop that the player will be able to enter
     def __init__(self, x, y):
@@ -383,11 +396,19 @@ class Game(object):
                                 self.all_sprites_list.add(self.bullet)
                                 self.bullet_list.add(self.bullet)
                 else:
-                    self.game_start = True
-                    if self.shop_screen:
-                        self.restart(self.player.x_speed, self.player.y_speed, self.player.money, self.player.score, self.player.lives, self.player.speed, self.player.gun, self.game_start)
-                        self.shop_screen = False
-            
+                    
+                    # Chech if player clicks starts
+                    pos = pygame.mouse.get_pos()
+                    x = pos[0]
+                    y = pos[1]
+
+                    if x > 400 and x < 600 and y > 580 and y < 640:
+                        self.game_start = True
+
+                        # empty button list
+                        self.button_list = pygame.sprite.Group()
+
+                
             # Player movement code
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_w:
@@ -430,9 +451,17 @@ class Game(object):
         self.zombie_list = pygame.sprite.Group()
         self.money_list = pygame.sprite.Group()
         self.shop_list = pygame.sprite.Group()
+        self.button_list = pygame.sprite.Group()
 
         # timer in game used for bullets and zombies
         self.timer = 0
+
+        # creating buttons for start scree
+        if self.game_start == False:
+            for i in range(3):
+                self.button = Button(300 * i + 100, 580)
+                self.button_list.add(self.button)
+
 
         # Creating the map of trees
         self.map = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -627,7 +656,12 @@ class Game(object):
         elif self.player.rect.y <= 0:
             self.player.rect.y = self.player.rect.y + self.player.speed
         elif self.player.rect.y >= 685:
-            self.player.rect.y = self.player.rect.y - self.player.speed  
+            if self.player.rect.x > 480 and self.player.rect.x < 520:    
+                if self.shop_screen:
+                    self.game_start = True
+                    self.restart(self.player.x_speed, self.player.y_speed, self.player.money, self.player.score, self.player.lives, self.player.speed, self.player.gun, self.game_start)
+            else:
+                self.player.rect.y = self.player.rect.y - self.player.speed  
 
     def gameplay_move_player(self):
         # update sprite position
@@ -701,7 +735,7 @@ class Game(object):
 
         # Create the player
 
-        self.player = Player(500, 685)
+        self.player = Player(500, 650)
         self.player.x_speed = player_x_speed
         self.player.y_speed = player_y_speed
         self.player.score = score
@@ -970,6 +1004,8 @@ class Game(object):
             center_y = (SCREEN_HEIGHT // 2) - (text.get_height() // 2) + 30
             screen.blit(text, [center_x, 510])
 
+            # drawing buttons
+            self.button_list.draw(screen)
 
         pygame.display.flip()
 def main():
