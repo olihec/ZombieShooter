@@ -19,6 +19,21 @@ SCREEN_HEIGHT = 700
 HIGHSCORE_FILE = "highscore.txt"
  
 # Classes
+class Bank(pygame.sprite.Sprite):
+    # this will be the class for the bank in the shop that the player can use
+    def __init__(self):
+        super().__init__()
+        self.x_size = 150
+        self.y_size = 150
+        self.image = pygame.Surface([self.x_size, self.y_size])
+        self.image.fill(RED)
+
+        self.rect = self.image.get_rect()
+        self.rect.x = 700
+        self.rect.y = 450
+
+        self.balance = 0
+
 class Button(pygame.sprite.Sprite):
     # this will be the class for the This will be a button that the player can press for instructions, strart, etc
     def __init__(self, x, y):
@@ -646,6 +661,7 @@ class Game(object):
 
         if self.player.rect.x < 985 and self.player.rect.x > 0:
             self.player.rect.x = self.player.rect.x + self.player.x_speed
+            self.bank_collision("x")
         elif self.player.rect.x <= 0:
             self.player.rect.x = self.player.rect.x + self.player.speed
         elif self.player.rect.x >= 985:
@@ -653,6 +669,7 @@ class Game(object):
 
         if self.player.rect.y < 685 and self.player.rect.y > 0:
             self.player.rect.y = self.player.rect.y + self.player.y_speed
+            self.bank_collision("y")
         elif self.player.rect.y <= 0:
             self.player.rect.y = self.player.rect.y + self.player.speed
         elif self.player.rect.y >= 685:
@@ -728,7 +745,7 @@ class Game(object):
         # Sprite groups
         self.all_sprites_list = pygame.sprite.Group() 
         self.powerup_list = pygame.sprite.Group()
-        
+        self.bank_list = pygame.sprite.Group()
         
 
         
@@ -745,7 +762,10 @@ class Game(object):
         self.player.gun = gun
         self.all_sprites_list.add(self.player)
 
-        
+        # create bank
+        self.bank = Bank()
+        self.all_sprites_list.add(self.bank)
+        self.bank_list.add(self.bank)
 
         # Create powerup
         for i in range(5):
@@ -817,6 +837,54 @@ class Game(object):
                     self.powerup_list.remove(self.powerup)
                     self.all_sprites_list.remove(self.powerup)
 
+    def bank_collision(self, movement):
+        # code for the function of the bank
+        if pygame.sprite.spritecollide(self.player, self.bank_list, False):
+            if not(self.bank.balance == 0 and self.player.money == 0):
+                transaction_complete = False
+                while transaction_complete == False:
+                    transaction = input("Withdraw or deposit? (w/d)")
+                    if transaction == "w":
+                        valid = False
+                        while not(valid):
+                            try:
+                                inp = int(input("How much?"))
+                                valid = True
+                            except ValueError:
+                                print("Error, not a number")
+                        inp = int(input("How much?"))
+                        if self.bank.balance >= inp:
+                            self.player.money = self.player.money + inp
+                            self.bank.balance = self.bank.balance - inp
+                            transaction_complete = True
+                        else:
+                            print("Error, insufficient amount")
+                    elif transaction == "d":
+                        valid = False
+                        while not(valid):
+                            try:
+                                inp = int(input("How much?"))
+                                valid = True
+                            except ValueError:
+                                print("Error, not a number")
+                        if self.player.money >= inp:
+                            self.bank.balance = self.bank.balance + inp
+                            self.player.money = self.player.money - inp
+                            transaction_complete = True
+                        else:
+                            print("Error, insufficient amount")
+            
+            if movement == "y":
+                if self.player.y_speed > 0:
+                    self.player.rect.bottom = self.bank.rect.top
+                else:
+                    self.player.rect.top = self.bank.rect.bottom
+            if movement == "x":
+                if self.player.x_speed > 0:
+                    self.player.rect.right = self.bank.rect.left
+                else:
+                    self.player.rect.left = self.bank.rect.right
+
     def run_logic(self):
         
         #This method is run each time through the frame. It
@@ -831,6 +899,7 @@ class Game(object):
             
 
             self.powerup_collisions()
+            
 
         
 
@@ -949,6 +1018,8 @@ class Game(object):
             screen.blit(text, [780, 2])
             text = self.player.font.render("Money: " + str(self.player.money),True,WHITE)
             screen.blit(text, [660, 2])
+            text = self.player.font.render("Balance: " + str(self.bank.balance),True,WHITE)
+            screen.blit(text, [725, 610])
 
             # drawing the hearts and score and money of the player
             for i in range(self.player.lives):
