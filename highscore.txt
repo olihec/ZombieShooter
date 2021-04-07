@@ -2,5 +2,5 @@ COXY
 535
 L1
 455
-Lucas
-145
+Oli
+210

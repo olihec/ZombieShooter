@@ -8,6 +8,7 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
+BLUE = (0, 0, 255)
 DARK_GREEN = (34,139,34)
 YELLOW = (255,255,0)
 BROWN = (210,105,30)
@@ -417,11 +418,15 @@ class Game(object):
                     x = pos[0]
                     y = pos[1]
 
+                    if self.instructions and x > 205 and x < 240 and y > 130 and y < 165:
+                        self.instructions = False
                     if x > 400 and x < 600 and y > 580 and y < 640:
                         self.game_start = True
 
                         # empty button list
                         self.button_list = pygame.sprite.Group()
+                    elif x > 700 and x < 900 and y > 580 and y < 640:
+                        self.instructions = True
 
                 
             # Player movement code
@@ -457,6 +462,7 @@ class Game(object):
         self.game_start = game_start
         self.shop_screen = False
         self.round_over = False
+        self.instructions = False
         self.background_image = pygame.image.load("lea.png").convert()
 
         # Sprite groups
@@ -907,7 +913,9 @@ class Game(object):
         if self.game_start:
             self.create_zombie()
             if self.timer % 250 == 0 and self.timer != 0:
-                self.round_over = True
+                if self.round_over == False:
+                    self.player.score = self.player.score + 50
+                    self.round_over = True
 
             # make the timer increase every second
             self.timer = self.timer + 1
@@ -942,6 +950,7 @@ class Game(object):
             zombie_hit = pygame.sprite.spritecollide(self.player, self.zombie_list, True) 
             for self.zombie in zombie_hit:
                 self.player.lives = self.player.lives - 1
+                self.player.money = 0
                 self.zombie_list.remove(self.zombie)
                 self.all_sprites_list.remove(self.zombie)
                 # when player dies
@@ -1026,6 +1035,9 @@ class Game(object):
                 screen.blit(self.player.heart_image, [i * 20 + 900, 2])
 
         else:
+
+            
+            
             self.background_image = pygame.image.load("start_screen.jpg").convert()
             screen.blit(self.background_image, [0, 0])
 
@@ -1077,6 +1089,11 @@ class Game(object):
 
             # drawing buttons
             self.button_list.draw(screen)
+
+            if self.instructions:
+                self.instructions_image = pygame.image.load("parchment.png").convert()
+                self.instructions_image.set_colorkey(BLACK)
+                screen.blit(self.instructions_image, [180, 100])
 
         pygame.display.flip()
 def main():
