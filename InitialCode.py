@@ -263,7 +263,7 @@ class Bullet(pygame.sprite.Sprite):
 
 class Player(pygame.sprite.Sprite):
     # this is the class for the player
-    def __init__(self, x, y):
+    def __init__(self, x, y, character):
         # constructor for the class, defining it's attributes
         super().__init__()
         self.x_size = 15
@@ -271,7 +271,27 @@ class Player(pygame.sprite.Sprite):
         self.original_image = pygame.Surface([self.x_size, self.y_size])
         self.image = self.original_image
         
-        self.orig_player_image = pygame.image.load("player.png").convert()
+        if character == "Jim":
+            self.orig_player_image = pygame.image.load("jim.png").convert()
+            self.lives = 3
+            self.score = 0
+            self.speed = 5
+            self.money = 0
+
+        elif character == "Emma":
+            self.orig_player_image = pygame.image.load("emma.png").convert()
+            self.lives = 4
+            self.score = 0
+            self.speed = 4
+            self.money = 0
+
+        elif character == "Hank":
+            self.orig_player_image = pygame.image.load("hank.png").convert()
+            self.lives = 2
+            self.score = 0
+            self.speed = 6
+            self.money = 0
+
         self.player_image = self.orig_player_image
         self.player_image.set_colorkey(BLACK)
 
@@ -289,10 +309,7 @@ class Player(pygame.sprite.Sprite):
         self.player_centre_x = self.rect.x + self.x_size / 2
         self.player_centre_y = self.rect.y + self.y_size / 2
 
-        self.lives = 3
-        self.score = 0
-        self.speed = 5
-        self.money = 0
+        
 
         # variable to track which gun player has
         self.gun = "Pistol"
@@ -385,6 +402,8 @@ class Game(object):
             except:
                 self.highscore = [["xxx", 0], ["xxx", 0], ["xxx", 0]]
 
+        self.characters = ["Jim", "Emma", "Hank"]
+        self.character_pointer = 0
 
         self.restart(0, 0, 0, 0 , 3 ,5, "Pistol", False)
 
@@ -413,21 +432,28 @@ class Game(object):
                                 self.bullet_list.add(self.bullet)
                 else:
                     
-                    # Chech if player clicks starts
+                    # Chech if player clicks buttons
                     pos = pygame.mouse.get_pos()
                     x = pos[0]
                     y = pos[1]
 
                     if self.instructions and x > 205 and x < 240 and y > 130 and y < 165:
                         self.instructions = False
-                    if x > 400 and x < 600 and y > 580 and y < 640:
-                        self.game_start = True
 
-                        # empty button list
-                        self.button_list = pygame.sprite.Group()
+                    if x > 100 and x < 300 and y > 580 and y < 640:
+                        self.character_selection = True
+
+                    elif x > 400 and x < 600 and y > 580 and y < 640:
+                        if self.character_selection:
+                            self.restart(0, 0, 0, 0 , 3 ,5, "Pistol", False)
+                        else:
+                            self.game_start = True
+
+                            # empty button list
+                            self.button_list = pygame.sprite.Group()
                     elif x > 700 and x < 900 and y > 580 and y < 640:
                         self.instructions = True
-
+                    
                 
             # Player movement code
             if event.type == pygame.KEYDOWN:
@@ -439,6 +465,13 @@ class Game(object):
                     self.player.move(-self.player.speed,0)
                 if event.key == pygame.K_d:
                     self.player.move(self.player.speed,0)
+
+                if self.character_selection:
+                    # picking character 
+                    if event.key == pygame.K_LEFT:
+                        self.character_pointer = (self.character_pointer - 1) % 3
+                    if event.key == pygame.K_RIGHT:
+                        self.character_pointer = (self.character_pointer + 1) % 3
             
             # Code to stop the player moving when key is released
             if event.type == pygame.KEYUP:
@@ -463,6 +496,7 @@ class Game(object):
         self.shop_screen = False
         self.round_over = False
         self.instructions = False
+        self.character_selection = False
         self.background_image = pygame.image.load("lea.png").convert()
 
         # Sprite groups
@@ -544,7 +578,7 @@ class Game(object):
                     self.empty_spaces.append((j,i))
         # Create the player
 
-        self.player = Player(500, 405)
+        self.player = Player(500, 405, self.characters[self.character_pointer])
         self.player.x_speed = player_x_speed
         self.player.y_speed = player_y_speed
         self.player.score = score
@@ -758,7 +792,7 @@ class Game(object):
 
         # Create the player
 
-        self.player = Player(500, 650)
+        self.player = Player(500, 650, self.characters[self.character_pointer])
         self.player.x_speed = player_x_speed
         self.player.y_speed = player_y_speed
         self.player.score = score
@@ -1033,6 +1067,20 @@ class Game(object):
             # drawing the hearts and score and money of the player
             for i in range(self.player.lives):
                 screen.blit(self.player.heart_image, [i * 20 + 900, 2])
+
+        elif self.character_selection:
+            screen.fill(BLACK)
+
+            # displaying currently selected character
+            if self.character_pointer == 0:
+                self.selection_image = pygame.image.load("jim_selection.png").convert()
+            elif self.character_pointer == 1:
+                self.selection_image = pygame.image.load("emma_selection.png").convert()
+            elif self.character_pointer == 2:
+                self.selection_image = pygame.image.load("hank_selection.png").convert()
+                
+            screen.blit(self.selection_image, [400, 200])
+            
 
         else:
 
