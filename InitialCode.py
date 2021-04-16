@@ -35,18 +35,6 @@ class Bank(pygame.sprite.Sprite):
 
         self.balance = 0
 
-class Button(pygame.sprite.Sprite):
-    # this will be the class for the This will be a button that the player can press for instructions, strart, etc
-    def __init__(self, x, y):
-        super().__init__()
-        self.x_size = 200
-        self.y_size = 60
-        self.image = pygame.Surface([self.x_size, self.y_size])
-        self.image.fill(RED)
-
-        self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
 
 class Shop(pygame.sprite.Sprite):
     # this will be the class for the shop that the player will be able to enter
@@ -138,7 +126,7 @@ class Zombie(pygame.sprite.Sprite):
         if self.rect.x == 20 or self.rect.x == 965 or self.rect.y == 20 or self.rect.y == 665:
             self.entered_map = True
 
-    
+   
 class Powerup(pygame.sprite.Sprite):
     # this is the class to give the player powerups
     def __init__(self, x, y):
@@ -273,24 +261,15 @@ class Player(pygame.sprite.Sprite):
         
         if character == "Jim":
             self.orig_player_image = pygame.image.load("jim.png").convert()
-            self.lives = 3
-            self.score = 0
-            self.speed = 5
-            self.money = 0
-
+          
         elif character == "Emma":
             self.orig_player_image = pygame.image.load("emma.png").convert()
-            self.lives = 4
-            self.score = 0
-            self.speed = 4
-            self.money = 0
-
+          
         elif character == "Hank":
             self.orig_player_image = pygame.image.load("hank.png").convert()
-            self.lives = 2
-            self.score = 0
-            self.speed = 6
-            self.money = 0
+       
+        self.money = 0
+        self.score = 0
 
         self.player_image = self.orig_player_image
         self.player_image.set_colorkey(BLACK)
@@ -445,12 +424,18 @@ class Game(object):
 
                     elif x > 400 and x < 600 and y > 580 and y < 640:
                         if self.character_selection:
-                            self.restart(0, 0, 0, 0 , 3 ,5, "Pistol", False)
+                            if self.characters[self.character_pointer] == "Jim":
+                                self.restart(0, 0, 0, 0 , 3 ,5, "Pistol", False)
+
+                            elif self.characters[self.character_pointer] == "Emma":
+                                self.restart(0, 0, 0, 0 , 4 ,3, "Pistol", False)
+
+                            elif self.characters[self.character_pointer] == "Hank":
+                                self.restart(0, 0, 0, 0 , 2 ,7, "Pistol", False)
                         else:
                             self.game_start = True
 
-                            # empty button list
-                            self.button_list = pygame.sprite.Group()
+                       
                     elif x > 700 and x < 900 and y > 580 and y < 640:
                         self.instructions = True
                     
@@ -506,18 +491,12 @@ class Game(object):
         self.zombie_list = pygame.sprite.Group()
         self.money_list = pygame.sprite.Group()
         self.shop_list = pygame.sprite.Group()
-        self.button_list = pygame.sprite.Group()
+        
 
         # timer in game used for bullets and zombies
         self.timer = 0
 
-        # creating buttons for start scree
-        if self.game_start == False:
-            for i in range(3):
-                self.button = Button(300 * i + 100, 580)
-                self.button_list.add(self.button)
-
-
+        
         # Creating the map of trees
         self.map = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
                     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
@@ -1070,6 +1049,27 @@ class Game(object):
 
         elif self.character_selection:
             screen.fill(BLACK)
+            font = pygame.font.SysFont("YouMurderer BB", 130)
+            text = font.render("CHARACTER SELECTION", True, RED)
+            center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
+            center_y = 30
+            screen.blit(text, [center_x, center_y])
+
+            font = pygame.font.SysFont("YouMurderer BB", 90)
+            text = font.render(self.characters[self.character_pointer], True, WHITE)
+            center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
+            center_y = 120
+            screen.blit(text, [center_x, center_y])           
+
+            self.right_arrow_image = pygame.image.load("right.png").convert()
+            screen.blit(self.right_arrow_image, [800, 200])
+
+            self.left_arrow_image = pygame.image.load("left.png").convert()
+            screen.blit(self.left_arrow_image, [10, 200])
+
+            self.select_button = pygame.image.load("select.png").convert()
+            self.select_button.set_colorkey(BLACK)    
+            screen.blit(self.select_button, [400, 580])
 
             # displaying currently selected character
             if self.character_pointer == 0:
@@ -1079,6 +1079,7 @@ class Game(object):
             elif self.character_pointer == 2:
                 self.selection_image = pygame.image.load("hank_selection.png").convert()
                 
+            self.selection_image.set_colorkey(BLACK)    
             screen.blit(self.selection_image, [400, 200])
             
 
@@ -1135,8 +1136,17 @@ class Game(object):
             center_y = (SCREEN_HEIGHT // 2) - (text.get_height() // 2) + 30
             screen.blit(text, [center_x, 510])
 
-            # drawing buttons
-            self.button_list.draw(screen)
+            self.character_selection_button = pygame.image.load("character_selection.png").convert()
+            self.character_selection_button.set_colorkey(BLACK)    
+            screen.blit(self.character_selection_button, [100, 580])
+
+            self.start_button = pygame.image.load("start.png").convert()
+            self.start_button.set_colorkey(BLACK)    
+            screen.blit(self.start_button, [400, 580])
+
+            self.instructions_button = pygame.image.load("instructions.png").convert()
+            self.instructions_button.set_colorkey(BLACK)    
+            screen.blit(self.instructions_button, [700, 580])
 
             if self.instructions:
                 self.instructions_image = pygame.image.load("parchment.png").convert()
