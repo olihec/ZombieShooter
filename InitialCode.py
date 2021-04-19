@@ -934,7 +934,7 @@ class Game(object):
             
         if self.game_start:
             self.create_zombie()
-            if self.timer % 250 == 0 and self.timer != 0:
+            if self.timer % 2500 == 0 and self.timer != 0:
                 if self.round_over == False:
                     self.player.score = self.player.score + 50
                     self.round_over = True
