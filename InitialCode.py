@@ -24,14 +24,14 @@ class Bank(pygame.sprite.Sprite):
     # this will be the class for the bank in the shop that the player can use
     def __init__(self):
         super().__init__()
-        self.x_size = 150
-        self.y_size = 150
+        self.x_size = 115
+        self.y_size = 115
         self.image = pygame.Surface([self.x_size, self.y_size])
-        self.image.fill(RED)
+        
 
         self.rect = self.image.get_rect()
-        self.rect.x = 700
-        self.rect.y = 450
+        self.rect.x = 760
+        self.rect.y = 510
 
         self.balance = 0
 
@@ -132,7 +132,7 @@ class Powerup(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
         self.image = pygame.Surface([50,50])
-        self.image.fill(YELLOW)
+       
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -144,8 +144,12 @@ class Powerup(pygame.sprite.Sprite):
 
         if self.type == "Shotgun":
             self.cost = 5
+            self.item_image = pygame.image.load("shotgun.png").convert()
+            self.item_image.set_colorkey(BLACK)
         elif self.type == "Speed":
             self.cost = 4
+            self.item_image = pygame.image.load("bolt.png").convert()
+            self.item_image.set_colorkey(BLACK)
      
 
 class Tree(pygame.sprite.Sprite):
@@ -692,7 +696,7 @@ class Game(object):
         elif self.player.rect.y <= 0:
             self.player.rect.y = self.player.rect.y + self.player.speed
         elif self.player.rect.y >= 685:
-            if self.player.rect.x > 480 and self.player.rect.x < 520:    
+            if self.player.rect.x > 460 and self.player.rect.x < 540:    
                 if self.shop_screen:
                     self.game_start = True
                     self.restart(self.player.x_speed, self.player.y_speed, self.player.money, self.player.score, self.player.lives, self.player.speed, self.player.gun, self.game_start)
@@ -787,9 +791,14 @@ class Game(object):
         self.bank_list.add(self.bank)
 
         # Create powerup
-        for i in range(5):
+        for i in range(3):
 
-            self.powerup = Powerup(i * 150 + 200 ,100)
+            self.powerup = Powerup(i * 250 + 125 ,130)
+            self.all_sprites_list.add(self.powerup)
+            self.powerup_list.add(self.powerup)
+        for i in range(2):
+
+            self.powerup = Powerup(i * 250 + 250 ,350)
             self.all_sprites_list.add(self.powerup)
             self.powerup_list.add(self.powerup)
 
@@ -1025,11 +1034,31 @@ class Game(object):
         elif self.shop_screen:
             # display the screen for the shop 
             
-            screen.fill(BROWN)
+            self.background_image = pygame.image.load("Holz Clean.jpg").convert()
+            screen.blit(self.background_image, [0, 0])
 
             
 
+            
+
+            self.plank_image = pygame.image.load("plank.png").convert()
+            for i in range(3):
+                screen.blit(self.plank_image, [i* 250 + 75, 80])
+            for i in range(2):
+                screen.blit(self.plank_image, [i* 250 + 200 , 300])
+
+           
+            for self.powerup in self.powerup_list:
+                text = self.player.font.render("Cost: " + str(self.powerup.cost),True,WHITE)
+                screen.blit(text, [self.powerup.rect.x - 10, self.powerup.rect.y + 70 ])
+                screen.blit(self.powerup.item_image, [self.powerup.rect.x, self.powerup.rect.y])
+              
+         
+
             self.all_sprites_list.draw(screen)
+            self.bank_image = pygame.image.load("bag.png").convert()
+            self.bank_image.set_colorkey(BLACK) 
+            screen.blit(self.bank_image, [self.bank.rect.x - 20 , self.bank.rect.y - 20])
             
             # player image
             screen.blit(self.player.player_image, [self.player.rect.x, self.player.rect.y])
@@ -1040,8 +1069,9 @@ class Game(object):
             screen.blit(text, [780, 2])
             text = self.player.font.render("Money: " + str(self.player.money),True,WHITE)
             screen.blit(text, [660, 2])
-            text = self.player.font.render("Balance: " + str(self.bank.balance),True,WHITE)
-            screen.blit(text, [725, 610])
+            font = pygame.font.SysFont('Calibri', 35, True, False)
+            text = font.render("$" + str(self.bank.balance),True,WHITE)
+            screen.blit(text, [797, 575])
 
             # drawing the hearts and score and money of the player
             for i in range(self.player.lives):
