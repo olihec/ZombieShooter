@@ -1104,10 +1104,26 @@ class Game(object):
             # displaying currently selected character
             if self.character_pointer == 0:
                 self.selection_image = pygame.image.load("jim_selection.png").convert()
+                font = pygame.font.SysFont('Calibri', 35, True, False)
+                text = font.render("Average Speed, Average Health",True,WHITE)
+                
+                center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
+                center_y = 530
+                screen.blit(text, [center_x, center_y])
             elif self.character_pointer == 1:
                 self.selection_image = pygame.image.load("emma_selection.png").convert()
+                font = pygame.font.SysFont('Calibri', 35, True, False)
+                text = font.render("Low Speed, High Health",True,WHITE)
+                center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
+                center_y = 530
+                screen.blit(text, [center_x, center_y])
             elif self.character_pointer == 2:
                 self.selection_image = pygame.image.load("hank_selection.png").convert()
+                font = pygame.font.SysFont('Calibri', 35, True, False)
+                text = font.render("High Speed, Low Health",True,WHITE)
+                center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
+                center_y = 530
+                screen.blit(text, [center_x, center_y])
                 
             self.selection_image.set_colorkey(BLACK)    
             screen.blit(self.selection_image, [400, 200])
