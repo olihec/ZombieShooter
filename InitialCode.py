@@ -51,7 +51,7 @@ class Shop(pygame.sprite.Sprite):
 
 class Zombie(pygame.sprite.Sprite):
     #this is the basic zombie class that will follow the player
-    def __init__(self, x, y):
+    def __init__(self, x, y, speed, health):
         super().__init__()
         self.x_size = 15
         self.y_size = 15
@@ -69,7 +69,8 @@ class Zombie(pygame.sprite.Sprite):
         self.x_speed = 0
         self.y_speed = 0
 
-        self.health = 30
+        self.health = health
+        self.speed = speed
 
         self.entered_map = False
         # variables to make the zombie follow the player
@@ -87,8 +88,8 @@ class Zombie(pygame.sprite.Sprite):
         
         self.diagonal = math.sqrt((self.y_difference ** 2) + (self.x_difference ** 2))
         
-        self.x_speed = round(2*(self.x_difference /self.diagonal))
-        self.y_speed = round(2*(self.y_difference /self.diagonal))
+        self.x_speed = round(self.speed*(self.x_difference /self.diagonal))
+        self.y_speed = round(self.speed*(self.y_difference /self.diagonal))
 
         if self.x_difference == 0 and self.y_difference >= 0:
             self.angle = 90
@@ -388,6 +389,8 @@ class Game(object):
         self.characters = ["Jim", "Emma", "Hank"]
         self.character_pointer = 0
 
+        self.round_counter = 0
+
         self.restart(0, 0, 0, 0 , 3 ,5, "Pistol", False)
 
     def process_events(self):
@@ -499,6 +502,7 @@ class Game(object):
 
         # timer in game used for bullets and zombies
         self.timer = 0
+        
 
         
         # Creating the map of trees
@@ -581,7 +585,11 @@ class Game(object):
     def create_zombie(self):
 
         # Create zombie 
-        if self.timer % 120 == 0:
+        if (120 - self.round_counter * 10) <= 0:
+            interval = 10
+        else:
+            interval = (120 - self.round_counter * 10)
+        if self.timer % interval == 0:
             if not(self.round_over):
                 zombie_created = False
                 while zombie_created == False:
@@ -590,7 +598,7 @@ class Game(object):
                     # check is zombie is out of screen
                     if x == -15 or x == 1000 or y == -15 or y == 700:
                         zombie_created = True
-                        self.zombie = Zombie(x,y)
+                        self.zombie = Zombie(x, y, self.round_counter * 2 + 2, self.round_counter * 30 + 30)
                         self.all_sprites_list.add(self.zombie)
                         self.zombie_list.add(self.zombie)
 
@@ -632,7 +640,7 @@ class Game(object):
                 
                 f.write(str(self.highscore[2][1]))
 
-
+        self.round_counter = 0
         self.restart(self.player.x_speed,self.player.y_speed, 0, 0, 3, 5, "Pistol", False)
 
     def bullet_collisions(self):
@@ -763,6 +771,7 @@ class Game(object):
         self.game_start = False
         self.shop_screen = True
         self.round_over = False
+        self.round_counter = self.round_counter + 1
 
 
         # Sprite groups
@@ -934,7 +943,7 @@ class Game(object):
             
         if self.game_start:
             self.create_zombie()
-            if self.timer % 2500 == 0 and self.timer != 0:
+            if self.timer % 250 == 0 and self.timer != 0:
                 if self.round_over == False:
                     self.player.score = self.player.score + 50
                     self.round_over = True
