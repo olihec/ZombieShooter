@@ -139,7 +139,7 @@ class Powerup(pygame.sprite.Sprite):
         self.rect.y = y
 
         # assigning random powerup to the sprite
-        powerup_list = ["Shotgun", "Speed"]
+        powerup_list = ["Shotgun", "Speed", "Health"]
         x = random.randint(0, len(powerup_list) - 1)
         self.type = powerup_list[x]
 
@@ -150,6 +150,10 @@ class Powerup(pygame.sprite.Sprite):
         elif self.type == "Speed":
             self.cost = 4
             self.item_image = pygame.image.load("bolt.png").convert()
+            self.item_image.set_colorkey(BLACK)
+        elif self.type == "Health":
+            self.cost = 3
+            self.item_image = pygame.image.load("heart.png").convert()
             self.item_image.set_colorkey(BLACK)
      
 
@@ -275,6 +279,7 @@ class Player(pygame.sprite.Sprite):
        
         self.money = 0
         self.score = 0
+        self.lives = 3
 
         self.player_image = self.orig_player_image
         self.player_image.set_colorkey(BLACK)
@@ -305,7 +310,7 @@ class Player(pygame.sprite.Sprite):
         
 
         # image for the hearts
-        self.heart_image = pygame.image.load("heart.png").convert()
+        self.heart_image = pygame.image.load("health.png").convert()
         self.heart_image.set_colorkey(BLACK)
 
         self.font = pygame.font.SysFont('Calibri', 25, True, False)
@@ -869,6 +874,9 @@ class Game(object):
                         if self.player.y_speed < 0:
                             self.player.y_speed = -(self.player.speed + 1)
                         self.player.speed = self.player.speed + 1
+                    
+                    elif self.powerup.type == "Health":
+                        self.player.lives = self.player.lives + 1
 
                     self.player.money = self.player.money - self.powerup.cost
                     self.powerup_list.remove(self.powerup)
@@ -1007,12 +1015,18 @@ class Game(object):
     def display_frame(self, screen):
 
         if self.game_start:
+            pygame.mouse.set_visible(False)
             # Display everything to the screen for the game. 
             self.background_image = pygame.image.load("lea.png").convert()
             screen.blit(self.background_image, [0, 0])
 
+            self.target = pygame.image.load("target.png").convert()
+            self.target.set_colorkey(BLACK)
+            pos = pygame.mouse.get_pos()
+            x = pos[0]
+            y = pos[1]
+            screen.blit(self.target, [x-10, y-10])
 
-            
             self.all_sprites_list.draw(screen)
             
 
@@ -1041,6 +1055,7 @@ class Game(object):
             
     
         elif self.shop_screen:
+            pygame.mouse.set_visible(True)
             # display the screen for the shop 
             
             self.background_image = pygame.image.load("Holz Clean.jpg").convert()
@@ -1087,6 +1102,7 @@ class Game(object):
                 screen.blit(self.player.heart_image, [i * 20 + 900, 2])
 
         elif self.character_selection:
+            pygame.mouse.set_visible(True)
             screen.fill(BLACK)
             font = pygame.font.SysFont("YouMurderer BB", 130)
             text = font.render("CHARACTER SELECTION", True, RED)
@@ -1139,7 +1155,7 @@ class Game(object):
             
 
         else:
-
+            pygame.mouse.set_visible(True)
             
             
             self.background_image = pygame.image.load("start_screen.jpg").convert()
