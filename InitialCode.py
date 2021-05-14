@@ -292,6 +292,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.y = y
 
         self.angle = 0
+        self.speed = 100
         self.x_speed = 0
         self.y_speed = 0
         
@@ -302,6 +303,8 @@ class Player(pygame.sprite.Sprite):
 
         # variable to track which gun player has
         self.gun = "Pistol"
+        
+
 
         self.reload_time = 20
         self.shot_timer = 0
@@ -363,7 +366,11 @@ class Player(pygame.sprite.Sprite):
     def update(self):
         
         
-        
+        # setting the weight of the gun
+        if self.gun == "Pistol":
+            self.gun_weight = 10
+        elif self.gun == "Shotgun":
+            self.gun_weight = 15
 
         if self.gun_reloaded == False:
             self.shot_timer = self.shot_timer + 1
@@ -396,7 +403,7 @@ class Game(object):
 
         self.round_counter = 0
 
-        self.restart(0, 0, 0, 0 , 3 ,5, "Pistol", False)
+        self.restart(0, 0, 0, 0 , 3 ,50, "Pistol", False)
 
     def process_events(self):
         # Process all of the events. Return a "True" if we need
@@ -437,13 +444,13 @@ class Game(object):
                     elif x > 400 and x < 600 and y > 580 and y < 640:
                         if self.character_selection:
                             if self.characters[self.character_pointer] == "Jim":
-                                self.restart(0, 0, 0, 0 , 3 ,5, "Pistol", False)
+                                self.restart(0, 0, 0, 0 , 3 ,50, "Pistol", False)
 
                             elif self.characters[self.character_pointer] == "Emma":
-                                self.restart(0, 0, 0, 0 , 4 ,3, "Pistol", False)
+                                self.restart(0, 0, 0, 0 , 4 ,30, "Pistol", False)
 
                             elif self.characters[self.character_pointer] == "Hank":
-                                self.restart(0, 0, 0, 0 , 2 ,7, "Pistol", False)
+                                self.restart(0, 0, 0, 0 , 2 ,70, "Pistol", False)
                         else:
                             self.game_start = True
 
@@ -646,7 +653,7 @@ class Game(object):
                 f.write(str(self.highscore[2][1]))
 
         self.round_counter = 0
-        self.restart(self.player.x_speed,self.player.y_speed, 0, 0, 3, 5, "Pistol", False)
+        self.restart(self.player.x_speed,self.player.y_speed, 0, 0, 3, 50, "Pistol", False)
 
     def bullet_collisions(self):
 
@@ -696,29 +703,29 @@ class Game(object):
         # update sprite position and keep in screen
 
         if self.player.rect.x < 985 and self.player.rect.x > 0:
-            self.player.rect.x = self.player.rect.x + self.player.x_speed
+            self.player.rect.x = self.player.rect.x + self.player.x_speed/self.player.gun_weight
             self.bank_collision("x")
         elif self.player.rect.x <= 0:
-            self.player.rect.x = self.player.rect.x + self.player.speed
+            self.player.rect.x = self.player.rect.x + self.player.speed/self.player.gun_weight
         elif self.player.rect.x >= 985:
-            self.player.rect.x = self.player.rect.x - self.player.speed
+            self.player.rect.x = self.player.rect.x - self.player.speed/self.player.gun_weight
 
         if self.player.rect.y < 685 and self.player.rect.y > 0:
-            self.player.rect.y = self.player.rect.y + self.player.y_speed
+            self.player.rect.y = self.player.rect.y + self.player.y_speed/self.player.gun_weight
             self.bank_collision("y")
         elif self.player.rect.y <= 0:
-            self.player.rect.y = self.player.rect.y + self.player.speed
+            self.player.rect.y = self.player.rect.y + self.player.speed/self.player.gun_weight
         elif self.player.rect.y >= 685:
             if self.player.rect.x > 460 and self.player.rect.x < 540:    
                 if self.shop_screen:
                     self.game_start = True
                     self.restart(self.player.x_speed, self.player.y_speed, self.player.money, self.player.score, self.player.lives, self.player.speed, self.player.gun, self.game_start)
             else:
-                self.player.rect.y = self.player.rect.y - self.player.speed  
+                self.player.rect.y = self.player.rect.y - self.player.speed  /self.player.gun_weight
 
     def gameplay_move_player(self):
         # update sprite position
-        self.player.rect.x = self.player.rect.x + self.player.x_speed
+        self.player.rect.x = self.player.rect.x + self.player.x_speed/self.player.gun_weight
         
         # check for collision with the shop
         # check if round is over to let player enter shop through door
@@ -739,7 +746,7 @@ class Game(object):
             else:
                 self.player.rect.left = self.tree.rect.right
             
-        self.player.rect.y = self.player.rect.y + self.player.y_speed
+        self.player.rect.y = self.player.rect.y + self.player.y_speed/self.player.gun_weight
 
         if self.round_over:
             # check for collision with the shop in right area
@@ -862,6 +869,7 @@ class Game(object):
                     # defining what each powerup does by its name
                     if self.powerup.type == "Shotgun":
                         self.player.gun = self.powerup.type
+                        self.player.gun_weight = 15
                         self.player.reload_time = 40
 
                     elif self.powerup.type == "Speed":
@@ -1001,9 +1009,9 @@ class Game(object):
 
 
             
-            
-            
 
+
+    
 
             self.gameplay_move_player()
             
