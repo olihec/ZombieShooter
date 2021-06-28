@@ -130,7 +130,7 @@ class Zombie(pygame.sprite.Sprite):
    
 class Powerup(pygame.sprite.Sprite):
     # this is the class to give the player powerups
-    def __init__(self, x, y):
+    def __init__(self, x, y, round):
         super().__init__()
         self.image = pygame.Surface([50,50])
        
@@ -139,7 +139,16 @@ class Powerup(pygame.sprite.Sprite):
         self.rect.y = y
 
         # assigning random powerup to the sprite
-        powerup_list = ["Shotgun", "Speed", "Health"]
+        powerup_list = []
+        if round == 0:
+            powerup_list.append("Health")
+        elif round == 1:
+            powerup_list.append("Health")
+            powerup_list.append("Speed")
+        elif round == 2:
+            powerup_list.append("Health")
+            powerup_list.append("Speed")
+            powerup_list.append("Shotgun") 
         x = random.randint(0, len(powerup_list) - 1)
         self.type = powerup_list[x]
 
@@ -286,7 +295,7 @@ class Player(pygame.sprite.Sprite):
 
         self.orig_rect = self.player_image.get_rect()
         
-
+        
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -303,8 +312,10 @@ class Player(pygame.sprite.Sprite):
 
         # variable to track which gun player has
         self.gun = "Pistol"
-        
 
+        self.gun_weight = 10
+        
+        
 
         self.reload_time = 20
         self.shot_timer = 0
@@ -959,7 +970,7 @@ class Game(object):
             
         if self.game_start:
             self.create_zombie()
-            if self.timer % 250 == 0 and self.timer != 0:
+            if self.timer % 2500 == 0 and self.timer != 0:
                 if self.round_over == False:
                     self.player.score = self.player.score + 50
                     self.round_over = True
