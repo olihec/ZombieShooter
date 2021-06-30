@@ -629,7 +629,7 @@ class Game(object):
     def game_over(self):
 
         # algorithm to find where in list highscore goes
-        pointer = 999
+        
         count = 0
         found = False
         while count < 3 and not(found):
@@ -638,7 +638,7 @@ class Game(object):
                 found = True
             count = count + 1
             
-        if pointer != 999:
+        if found == True:
             count = 2
             while count != pointer:
                 count = count - 1

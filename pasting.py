@@ -99,6 +99,16 @@ class Tree(pygame.sprite.Sprite):
         self.rect.y = y
         self.health = 50
 
+class Money(pygame.sprite.Sprite):
+    # this is the class for our Money in the map that spawns under trees and zombies
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.Surface([10,10])
+        self.image.fill(BLACK)
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
 class Bullet(pygame.sprite.Sprite):
     # This is the class for our bullets that the player will shoot
     def __init__(self, x, y, gun):
@@ -181,6 +191,7 @@ class Player(pygame.sprite.Sprite):
         self.lives = 3
         self.score = 0
         self.speed = 5
+        self.money = 0
 
         # variable to track which gun player has
         self.gun = "Pistol"
@@ -209,7 +220,7 @@ class Player(pygame.sprite.Sprite):
 
     def update(self):
         
-        self.text = self.font.render("Score: " + str(self.score),True,WHITE)
+    
 
 
         if self.gun_reloaded == False:
@@ -260,7 +271,7 @@ class Game(object):
         self.dir = path.dirname(__file__)
         with open(path.join(self.dir, HIGHSCORE_FILE), 'r') as f:
             try:
-                self.highscore = [[f.readline() , int(f.readline())], [f.readline() , int(f.readline())], [f.readline() , int(f.readline())]]   
+                self.highscore = [[f.readline()[:-1] , int(f.readline())], [f.readline()[:-1] , int(f.readline())], [f.readline()[:-1] , int(f.readline())]]   
             except:
                 self.highscore = [["xxx", 0], ["xxx", 0], ["xxx", 0]]
 
@@ -274,6 +285,7 @@ class Game(object):
         self.tree_list = pygame.sprite.Group()
         self.zombie_list = pygame.sprite.Group()
         self.powerup_list = pygame.sprite.Group()
+        self.money_list = pygame.sprite.Group()
 
         # timer in game used for bullets and zombies
         self.timer = 0
@@ -450,6 +462,14 @@ class Game(object):
                         if self.zombie.health < 1:
                                 # remove zombie if its health goes below 0
                                 self.player.score = self.player.score + 10
+
+                                # dropping money on death
+                                x = random.randint(0,1)
+                                if x == 1:
+                                    self.money = Money(self.zombie.zombie_centre_x,self.zombie.zombie_centre_y)
+                                    self.all_sprites_list.add(self.money)
+                                    self.money_list.add(self.money)
+
                                 self.zombie_list.remove(self.zombie)
                                 self.all_sprites_list.remove(self.zombie)
                     # collide with tree
@@ -466,10 +486,20 @@ class Game(object):
                             if self.tree.health < 1:
                                 # remove tree if its health goes below 0
                                 self.player.score = self.player.score + 5
+                                # one in 3 chance for money drop
+                                x = random.randint(0,3)
+                                if x == 1:
+                                    self.money = Money(self.tree.rect.x, self.tree.rect.y)
+                                    self.all_sprites_list.add(self.money)
+                                    self.money_list.add(self.money)
                                 self.tree_list.remove(self.tree)
                                 self.all_sprites_list.remove(self.tree)
                         
             
+            money_collect = pygame.sprite.spritecollide(self.player, self.money_list, True) 
+            for self.money in money_collect:
+                self.player.money = self.player.money + 1
+
             zombie_hit = pygame.sprite.spritecollide(self.player, self.zombie_list, True) 
             for self.zombie in zombie_hit:
                 self.player.lives = self.player.lives - 1
@@ -477,6 +507,7 @@ class Game(object):
                 self.all_sprites_list.remove(self.zombie)
                 # when player dies
                 if self.player.lives < 0:
+                    # algorithm to find where in list highscore goes
                     pointer = 999
                     count = 0
                     found = False
@@ -499,15 +530,15 @@ class Game(object):
 
 
                         with open(path.join(self.dir, HIGHSCORE_FILE), 'w') as f:
-                            f.write(self.highscore[0][0])
+                            f.write(self.highscore[0][0] + "\n")
                             
-                            f.write(str(self.highscore[0][1]))
+                            f.write(str(self.highscore[0][1]) + "\n")
                             
-                            f.write(self.highscore[1][0])
+                            f.write(self.highscore[1][0] + "\n")
                             
-                            f.write(str(self.highscore[1][1]))
+                            f.write(str(self.highscore[1][1]) + "\n")
                             
-                            f.write(self.highscore[2][0])
+                            f.write(self.highscore[2][0] + "\n")
                             
                             f.write(str(self.highscore[2][1]))
 
@@ -695,10 +726,14 @@ class Game(object):
             # draw all the sprites
             self.all_sprites_list.draw(screen)
 
-            # drawing the hearts and score of the player
+            # drawing the hearts and score and money of the player
             for i in range(self.player.lives):
                 screen.blit(self.player.heart_image, [i * 20 + 900, 2])
-            screen.blit(self.player.text, [780, 2])
+
+            text = self.player.font.render("Score: " + str(self.player.score),True,WHITE)
+            screen.blit(text, [780, 2])
+            text = self.player.font.render("Money: " + str(self.player.money),True,WHITE)
+            screen.blit(text, [660, 2])
     
             
         else:
