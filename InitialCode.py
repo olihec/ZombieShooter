@@ -618,7 +618,7 @@ class Game(object):
                 while zombie_created == False:
                     x = random.randint(-15, 1000)
                     y = random.randint(-15, 700)
-                    # check is zombie is out of screen
+                    # check is zombie is out of screen
                     if x == -15 or x == 1000 or y == -15 or y == 700:
                         zombie_created = True
                         self.zombie = Zombie(x, y, self.round_counter * 2 + 2, self.round_counter * 30 + 30)
@@ -822,15 +822,15 @@ class Game(object):
         self.all_sprites_list.add(self.bank)
         self.bank_list.add(self.bank)
 
-        # Create powerup
+        # Create powerup
         for i in range(3):
 
-            self.powerup = Powerup(i * 250 + 125 ,130)
+            self.powerup = Powerup(i * 250 + 125 ,130, self.round_counter)
             self.all_sprites_list.add(self.powerup)
             self.powerup_list.add(self.powerup)
         for i in range(2):
 
-            self.powerup = Powerup(i * 250 + 250 ,350)
+            self.powerup = Powerup(i * 250 + 250 ,350, self.round_counter)
             self.all_sprites_list.add(self.powerup)
             self.powerup_list.add(self.powerup)
 
@@ -877,7 +877,7 @@ class Game(object):
             powerup_hit = pygame.sprite.spritecollide(self.player, self.powerup_list, False) 
             for self.powerup in powerup_hit:
                 if self.player.money >= self.powerup.cost:
-                    # defining what each powerup does by its name
+                    # defining what each powerup does by its name
                     if self.powerup.type == "Shotgun":
                         self.player.gun = self.powerup.type
                         self.player.gun_weight = 15
@@ -957,7 +957,7 @@ class Game(object):
         if self.shop_screen:
             # what happens in the shop
             
-            # update the position of all sprites
+            # update the position of all sprites
             self.all_sprites_list.update()
             self.shop_move_player()
             
@@ -985,7 +985,7 @@ class Game(object):
                 self.zombie.player_centre_y = self.player.player_centre_y
 
 
-            # update the position of all sprites
+            # update the position of all sprites
             self.all_sprites_list.update()
             
             self.player.reload()
@@ -1068,7 +1068,7 @@ class Game(object):
             text = self.player.font.render("Money: " + str(self.player.money),True,WHITE)
             screen.blit(text, [660, 2])
 
-            # drawing the hearts and score and money of the player
+            # drawing the hearts and score and money of the player
             for i in range(self.player.lives):
                 screen.blit(self.player.heart_image, [i * 20 + 900, 2])
             
@@ -1116,7 +1116,7 @@ class Game(object):
             text = font.render("$" + str(self.bank.balance),True,WHITE)
             screen.blit(text, [797, 575])
 
-            # drawing the hearts and score and money of the player
+            # drawing the hearts and score and money of the player
             for i in range(self.player.lives):
                 screen.blit(self.player.heart_image, [i * 20 + 900, 2])
 
@@ -1283,4 +1283,3 @@ def main():
 # Call the main function, start up the game
 if __name__ == "__main__":
     main()
-    
