@@ -1252,7 +1252,7 @@ def main():
     size = [SCREEN_WIDTH, SCREEN_HEIGHT]
     screen = pygame.display.set_mode(size)
  
-    pygame.display.set_caption("My Game")
+    pygame.display.set_caption("Zombie Shooter")
     pygame.mouse.set_visible(True)
  
     # Create our objects and set the data
