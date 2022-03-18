@@ -917,7 +917,7 @@ class Game(object):
                             except ValueError:
                                 print("Error, not a number")
                         inp = int(input("How much?"))
-                        if self.bank.balance >= inp:
+                        if self.bank.balance >= inp and inp > 0:
                             self.player.money = self.player.money + inp
                             self.bank.balance = self.bank.balance - inp
                             transaction_complete = True
@@ -931,7 +931,7 @@ class Game(object):
                                 valid = True
                             except ValueError:
                                 print("Error, not a number")
-                        if self.player.money >= inp:
+                        if self.player.money >= inp and inp > 0:
                             self.bank.balance = self.bank.balance + inp
                             self.player.money = self.player.money - inp
                             transaction_complete = True
@@ -970,7 +970,7 @@ class Game(object):
             
         if self.game_start:
             self.create_zombie()
-            if self.timer % 25 == 0 and self.timer != 0:
+            if self.timer % 250 == 0 and self.timer != 0:
                 if self.round_over == False:
                     self.player.score = self.player.score + 50
                     self.round_over = True
