@@ -916,7 +916,7 @@ class Game(object):
                                 valid = True
                             except ValueError:
                                 print("Error, not a number")
-                        inp = int(input("How much?"))
+
                         if self.bank.balance >= inp and inp > 0:
                             self.player.money = self.player.money + inp
                             self.bank.balance = self.bank.balance - inp
