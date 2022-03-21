@@ -1,11 +1,11 @@
-import pygame
+import pygame      #importing libraries to use
 import random
 import math
 from os import path
  
 # Constants
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)    # colours in rgb
+WHITE = (255, 255, 255) 
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
@@ -22,7 +22,7 @@ HIGHSCORE_FILE = "highscore.txt"
 # Classes
 class Bank(pygame.sprite.Sprite):
     # this will be the class for the bank in the shop that the player can use
-    def __init__(self):
+    def __init__(self):   # bank constructor
         super().__init__()
         self.x_size = 115
         self.y_size = 115
@@ -38,7 +38,7 @@ class Bank(pygame.sprite.Sprite):
 
 class Shop(pygame.sprite.Sprite):
     # this will be the class for the shop that the player will be able to enter
-    def __init__(self, x, y):
+    def __init__(self, x, y): #shop constructor
         super().__init__()
         self.x_size = 100
         self.y_size = 100
@@ -51,7 +51,7 @@ class Shop(pygame.sprite.Sprite):
 
 class Zombie(pygame.sprite.Sprite):
     #this is the basic zombie class that will follow the player
-    def __init__(self, x, y, speed, health):
+    def __init__(self, x, y, speed, health):   #zombie constructor
         super().__init__()
         self.x_size = 15
         self.y_size = 15
@@ -79,7 +79,7 @@ class Zombie(pygame.sprite.Sprite):
         self.player_centre_y = 0
 
     def follow_player(self):
-        # making the zombie follow the player
+        # making the zombie follow the player by using pythagoras
         self.zombie_centre_x = self.rect.x + self.x_size / 2
         self.zombie_centre_y = self.rect.y + self.y_size / 2
 
@@ -91,9 +91,10 @@ class Zombie(pygame.sprite.Sprite):
         self.x_speed = round(self.speed*(self.x_difference /self.diagonal))
         self.y_speed = round(self.speed*(self.y_difference /self.diagonal))
 
-        if self.x_difference == 0 and self.y_difference >= 0:
+        # different cases to rotate the zombie
+        if self.x_difference == 0 and self.y_difference >= 0:  # avoids division by 0 error
             self.angle = 90
-        elif self.x_difference == 0 and self.y_difference < 0:
+        elif self.x_difference == 0 and self.y_difference < 0:  # avoids division by 0 error
             self.angle = -90
         elif self.x_difference < 0 and self.y_difference <= 0:
             self.angle = math.degrees(math.atan( self.y_difference / self.x_difference ))
@@ -140,6 +141,8 @@ class Powerup(pygame.sprite.Sprite):
 
         # assigning random powerup to the sprite
         powerup_list = []
+
+        #different powerups depending on how far in the game the player is
         if round == 0:
             powerup_list.append("Health")
         elif round == 1:
@@ -152,6 +155,7 @@ class Powerup(pygame.sprite.Sprite):
         x = random.randint(0, len(powerup_list) - 1)
         self.type = powerup_list[x]
 
+        # difining the cost of each item
         if self.type == "Shotgun":
             self.cost = 5
             self.item_image = pygame.image.load("shotgun.png").convert()
@@ -203,7 +207,7 @@ class Money(pygame.sprite.Sprite):
         self.image_timer = self.image_timer + 1
         if self.image_timer % 5 == 0:
             self.image_pointer = (self.image_pointer + 1) % 8
-        self.money_image = pygame.image.load(self.image_list[self.image_pointer]).convert()
+        self.money_image = pygame.image.load(self.image_list[self.image_pointer]).convert()   # rotating image
         self.money_image.set_colorkey(BLACK)
 
 class Bullet(pygame.sprite.Sprite):
@@ -243,6 +247,7 @@ class Bullet(pygame.sprite.Sprite):
         self.y_difference = y - self.bullet_centre_y
         self.x_difference = x - self.bullet_centre_x
         
+        # using pythagoras to find unit vector
         self.diagonal = math.sqrt((self.y_difference ** 2) + (self.x_difference ** 2))
 
         if self.gun == "Shotgun":
@@ -277,6 +282,7 @@ class Player(pygame.sprite.Sprite):
         self.original_image = pygame.Surface([self.x_size, self.y_size])
         self.image = self.original_image
         
+        # image depending og character
         if character == "Jim":
             self.orig_player_image = pygame.image.load("jim.png").convert()
           
@@ -414,6 +420,7 @@ class Game(object):
 
         self.round_counter = 0
 
+        # starting the game
         self.restart(0, 0, 0, 0 , 3 ,50, "Pistol", False)
 
     def process_events(self):
@@ -431,10 +438,12 @@ class Game(object):
                         self.player.gun_reloaded = False
                         self.player.shot_timer = 0
                         if self.player.gun == "Pistol":
+                            # shooting for pistol
                             self.bullet = Bullet(self.player.player_centre_x, self.player.player_centre_y, self.player.gun)
                             self.all_sprites_list.add(self.bullet)
                             self.bullet_list.add(self.bullet)
                         elif self.player.gun == "Shotgun":
+                            # shooting for shotgun
                             for i in range(5):
                                 self.bullet = Bullet(self.player.player_centre_x, self.player.player_centre_y, self.player.gun)
                                 self.all_sprites_list.add(self.bullet)
@@ -445,13 +454,15 @@ class Game(object):
                     pos = pygame.mouse.get_pos()
                     x = pos[0]
                     y = pos[1]
-
+                    # check is instructions are being shown and exit
                     if self.instructions and x > 205 and x < 240 and y > 130 and y < 165:
                         self.instructions = False
 
+                    # check is user presses character selection
                     if x > 100 and x < 300 and y > 580 and y < 640:
                         self.character_selection = True
 
+                    # check is character selection button is pressed
                     elif x > 400 and x < 600 and y > 580 and y < 640:
                         if self.character_selection:
                             if self.characters[self.character_pointer] == "Jim":
@@ -465,7 +476,7 @@ class Game(object):
                         else:
                             self.game_start = True
 
-                       
+                    # check is instructions button is pressed
                     elif x > 700 and x < 900 and y > 580 and y < 640:
                         self.instructions = True
                     
@@ -632,24 +643,26 @@ class Game(object):
         
         count = 0
         found = False
+        # finding is a new highscore should be inserted
         while count < 3 and not(found):
             if self.highscore[count][1] < self.player.score:
                 pointer = count
                 found = True
             count = count + 1
-            
+        
+        # using insertion sort on new high score
         if found == True:
             count = 2
             while count != pointer:
                 count = count - 1
                 self.highscore[count + 1] = self.highscore[count]
-            
+            #asking for user's name
             inp = input("Enter name")
             self.highscore[pointer] = [inp, self.player.score]
             
                 
 
-
+            # writing to text file
             with open(path.join(self.dir, HIGHSCORE_FILE), 'w') as f:
                 f.write(self.highscore[0][0] + "\n")
                 
@@ -664,6 +677,7 @@ class Game(object):
                 f.write(str(self.highscore[2][1]))
 
         self.round_counter = 0
+        # ending game
         self.restart(self.player.x_speed,self.player.y_speed, 0, 0, 3, 50, "Pistol", False)
 
     def bullet_collisions(self):
@@ -713,6 +727,7 @@ class Game(object):
     def shop_move_player(self):
         # update sprite position and keep in screen
 
+        # check for collision with bank in x
         if self.player.rect.x < 985 and self.player.rect.x > 0:
             self.player.rect.x = self.player.rect.x + self.player.x_speed//self.player.gun_weight
             self.bank_collision("x")
@@ -721,12 +736,15 @@ class Game(object):
         elif self.player.rect.x >= 985:
             self.player.rect.x = self.player.rect.x - self.player.speed//self.player.gun_weight
 
+        # check for collision with bank in y
         if self.player.rect.y < 685 and self.player.rect.y > 0:
             self.player.rect.y = self.player.rect.y + self.player.y_speed//self.player.gun_weight
             self.bank_collision("y")
         elif self.player.rect.y <= 0:
             self.player.rect.y = self.player.rect.y + self.player.speed//self.player.gun_weight
         elif self.player.rect.y >= 685:
+
+            # exiting shop
             if self.player.rect.x > 460 and self.player.rect.x < 540:    
                 if self.shop_screen:
                     self.game_start = True
@@ -772,6 +790,7 @@ class Game(object):
                 elif self.player.y_speed > 0:
                     self.player.rect.bottom = self.shop.rect.top
         else:
+            # non-door shor collision
             if pygame.sprite.spritecollide(self.player, self.shop_list, False):
                 if self.player.y_speed > 0:
                     self.player.rect.bottom = self.shop.rect.top
@@ -841,14 +860,14 @@ class Game(object):
                 
         self.zombie.rect.x = self.zombie.rect.x + self.zombie.x_speed
 
-        # check for collision with the shop
+        # check for collision with the shop in x
         if pygame.sprite.spritecollide(self.zombie, self.shop_list, False):
             if self.zombie.x_speed > 0:
                 self.zombie.rect.right = self.shop.rect.left
             elif self.zombie.x_speed < 0:
                 self.zombie.rect.left = self.shop.rect.right
         
-        
+        # moving zombie once it has entered
         if self.zombie.entered_map == True:    
             tree_hit_list = pygame.sprite.spritecollide(self.zombie, self.tree_list, False)
             for self.tree in tree_hit_list:
@@ -858,13 +877,13 @@ class Game(object):
                     self.zombie.rect.left = self.tree.rect.right
                 
         self.zombie.rect.y = self.zombie.rect.y + self.zombie.y_speed
-
+        # check for collision with the shop in y
         if pygame.sprite.spritecollide(self.zombie, self.shop_list, False):
             if self.zombie.y_speed > 0:
                     self.zombie.rect.bottom = self.shop.rect.top
             elif self.zombie.y_speed < 0:
                 self.zombie.rect.top = self.shop.rect.bottom
-
+        # moving zombie once it has entered
         if self.zombie.entered_map == True:
             tree_hit_list = pygame.sprite.spritecollide(self.zombie, self.tree_list, False)
             for self.tree in tree_hit_list:
@@ -907,10 +926,13 @@ class Game(object):
             if not(self.bank.balance == 0 and self.player.money == 0):
                 transaction_complete = False
                 while transaction_complete == False:
+                    # asking what action user wants to take
                     transaction = input("Withdraw or deposit? (w/d)")
                     if transaction == "w":
                         valid = False
                         while not(valid):
+
+                            # validation for integer input
                             try:
                                 inp = int(input("How much?"))
                                 valid = True
@@ -926,6 +948,7 @@ class Game(object):
                     elif transaction == "d":
                         valid = False
                         while not(valid):
+                            # validation for integer input
                             try:
                                 inp = int(input("How much?"))
                                 valid = True
@@ -938,6 +961,7 @@ class Game(object):
                         else:
                             print("Error, insufficient amount")
             
+            # rosolving bank collision
             if movement == "y":
                 if self.player.y_speed > 0:
                     self.player.rect.bottom = self.bank.rect.top
@@ -1083,14 +1107,14 @@ class Game(object):
             
 
             
-
+            # displaying platforms for items
             self.plank_image = pygame.image.load("plank.png").convert()
             for i in range(3):
                 screen.blit(self.plank_image, [i* 250 + 75, 80])
             for i in range(2):
                 screen.blit(self.plank_image, [i* 250 + 200 , 300])
 
-           
+           #dispaying cost of each item
             for self.powerup in self.powerup_list:
                 text = self.player.font.render("Cost: " + str(self.powerup.cost),True,WHITE)
                 screen.blit(text, [self.powerup.rect.x - 10, self.powerup.rect.y + 70 ])
@@ -1135,17 +1159,19 @@ class Game(object):
             center_y = 120
             screen.blit(text, [center_x, center_y])           
 
+            # displaying arrows on either side of character
             self.right_arrow_image = pygame.image.load("right.png").convert()
             screen.blit(self.right_arrow_image, [800, 200])
 
             self.left_arrow_image = pygame.image.load("left.png").convert()
             screen.blit(self.left_arrow_image, [10, 200])
 
+            # select button
             self.select_button = pygame.image.load("select.png").convert()
             self.select_button.set_colorkey(BLACK)    
             screen.blit(self.select_button, [400, 580])
 
-            # displaying currently selected character
+            # displaying currently selected character and information about them
             if self.character_pointer == 0:
                 self.selection_image = pygame.image.load("jim_selection.png").convert()
                 font = pygame.font.SysFont('Calibri', 35, True, False)
@@ -1176,10 +1202,11 @@ class Game(object):
         else:
             pygame.mouse.set_visible(True)
             
-            
+            # title page
             self.background_image = pygame.image.load("start_screen.jpg").convert()
             screen.blit(self.background_image, [0, 0])
 
+            # title of game
             font = pygame.font.SysFont("YouMurderer BB", 220)
             text = font.render("ZOMBIE", True, RED)
             center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
@@ -1192,6 +1219,7 @@ class Game(object):
             center_y = 170
             screen.blit(text, [center_x, center_y])
 
+            # displaying leaderboad
             self.leaderboard_image = pygame.image.load("leaderboard.png").convert()
             self.leaderboard_image.set_colorkey(BLACK)
             center_x = (SCREEN_WIDTH // 2) - (self.leaderboard_image.get_width() // 2)
@@ -1226,6 +1254,7 @@ class Game(object):
             center_y = (SCREEN_HEIGHT // 2) - (text.get_height() // 2) + 30
             screen.blit(text, [center_x, 510])
 
+            # displaying all buttons for title page
             self.character_selection_button = pygame.image.load("character_selection.png").convert()
             self.character_selection_button.set_colorkey(BLACK)    
             screen.blit(self.character_selection_button, [100, 580])
@@ -1238,10 +1267,12 @@ class Game(object):
             self.instructions_button.set_colorkey(BLACK)    
             screen.blit(self.instructions_button, [700, 580])
 
+            # displaying instructions
             if self.instructions:
                 self.instructions_image = pygame.image.load("parchment.png").convert()
                 self.instructions_image.set_colorkey(BLACK)
                 screen.blit(self.instructions_image, [180, 100])
+
 
         pygame.display.flip()
 def main():
